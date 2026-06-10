@@ -223,7 +223,7 @@
             setWord('GET YOUR SHIT DONE');
             phase = 1;
             advancing = false;
-          }, 400);
+          }, 1900);
         }
 
       } else if (phase === 1) {
