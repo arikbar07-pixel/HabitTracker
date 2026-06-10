@@ -1,0 +1,19 @@
+{
+  "name": "My Habits",
+  "short_name": "Habits",
+  "description": "Personal habit tracker",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1326",
+  "theme_color": "#4be277",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

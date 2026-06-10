@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Habits</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#4be277"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="My Habits"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: {
+    colors: {
+      "primary": "#4be277", "primary-container": "#22c55e", "on-primary": "#003915",
+      "secondary": "#4cd7f6", "tertiary": "#deb8ff", "tertiary-container": "#cb94ff",
+      "surface": "#0b1326", "surface-container": "#171f33", "surface-container-low": "#131b2e",
+      "surface-container-lowest": "#060e20", "surface-container-high": "#222a3d",
+      "surface-container-highest": "#2d3449", "surface-bright": "#31394d",
+      "on-surface": "#dae2fd", "on-surface-variant": "#bccbb9",
+      "outline": "#869585", "outline-variant": "#3d4a3d", "background": "#0b1326",
+    }
+  }}
+}
+</script>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+
+<div id="header-mount"></div>
+
+<div class="flex">
+  <div id="sidebar-mount"></div>
+
+  <main class="flex-1 md:ml-64 p-5 md:p-12 pb-24 md:pb-12 fade-in">
+
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+      <div>
+        <h1 class="text-3xl font-black text-on-surface mb-1" style="font-family:Montserrat">My Habits</h1>
+        <p class="text-on-surface-variant text-sm">Visualize your performance and maintain your streaks.</p>
+      </div>
+      <div class="flex gap-3 items-center">
+        <button onclick="shiftWeek(-1)" class="p-2 rounded-lg border border-outline-variant/40 text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors">
+          <span class="material-symbols-outlined text-xl">chevron_left</span>
+        </button>
+        <span class="text-sm font-bold text-on-surface px-2" id="week-label"></span>
+        <button onclick="shiftWeek(1)" class="p-2 rounded-lg border border-outline-variant/40 text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors">
+          <span class="material-symbols-outlined text-xl">chevron_right</span>
+        </button>
+        <button onclick="openModal('add-habit-modal')" class="bg-primary text-on-primary py-2.5 px-5 rounded-lg font-bold flex items-center gap-2 hover:brightness-110 transition-all text-sm shadow-lg">
+          <span class="material-symbols-outlined text-xl">add</span>New Habit
+        </button>
+      </div>
+    </div>
+
+    <!-- Matrix Table -->
+    <div class="pro-card rounded-xl overflow-hidden mb-10">
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse" id="matrix-table">
+          <thead id="matrix-head"></thead>
+          <tbody id="matrix-body" class="divide-y" style="border-color:#1e293b"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Exception Days Panel -->
+    <section class="mb-10">
+      <div class="pro-card rounded-xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-base font-semibold text-on-surface flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full" style="background:#f0c040;box-shadow:0 0 8px #f0c040"></span>
+            Exception Days
+          </h2>
+          <button onclick="openModal('add-exception-modal')" class="text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors" style="color:#f0c040;border:1px solid rgba(240,192,64,0.35);background:rgba(240,192,64,0.06)" onmouseover="this.style.background='rgba(240,192,64,0.14)'" onmouseout="this.style.background='rgba(240,192,64,0.06)'">
+            <span class="material-symbols-outlined text-sm">add</span>Add
+          </button>
+        </div>
+        <div id="exceptions-list"></div>
+      </div>
+    </section>
+
+    <!-- Archived Habits -->
+    <section>
+      <h2 class="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+        <span class="w-1.5 h-1.5 bg-primary rounded-full" style="box-shadow:0 0 8px #4be277"></span>
+        Archived Habits
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="archived-list"></div>
+    </section>
+
+    <!-- Quote footer -->
+    <footer class="mt-16 pt-8 border-t text-center" style="border-color:#1e293b">
+      <p class="text-sm text-on-surface-variant italic font-light max-w-lg mx-auto">
+        "Self-discipline is the foundation of all success. Without consistency, talent remains unfulfilled potential."
+      </p>
+    </footer>
+  </main>
+</div>
+
+<!-- Add Habit Modal -->
+<div class="modal-overlay" id="add-habit-modal" onclick="if(event.target===this)closeModal('add-habit-modal')">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-lg text-on-surface" style="font-family:Montserrat">New Habit</h3>
+      <button onclick="closeModal('add-habit-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form onsubmit="submitNewHabit(event)">
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Habit Name *</label>
+        <input class="habit-input" type="text" id="habit-name" placeholder="e.g. Morning Meditation" required/>
+      </div>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Icon</label>
+        <div class="grid grid-cols-8 gap-2" id="icon-picker"></div>
+        <input type="hidden" id="habit-icon" value="sunny"/>
+      </div>
+      <div class="mb-6">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Repeat on</label>
+        <div class="flex gap-1.5 flex-wrap" id="day-picker-add"></div>
+        <input type="hidden" id="habit-days" value="0,1,2,3,4,5,6"/>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeModal('add-habit-modal')" class="flex-1 py-2.5 rounded-lg border border-outline-variant/40 text-on-surface-variant text-sm font-bold hover:bg-white/5">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110">Add Habit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Habit Modal -->
+<div class="modal-overlay" id="edit-habit-modal" onclick="if(event.target===this)closeModal('edit-habit-modal')">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-lg text-on-surface" style="font-family:Montserrat">Edit Habit</h3>
+      <button onclick="closeModal('edit-habit-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form onsubmit="submitEditHabit(event)">
+      <input type="hidden" id="edit-habit-id"/>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Habit Name</label>
+        <input class="habit-input" type="text" id="edit-habit-name" required/>
+      </div>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Icon</label>
+        <div class="grid grid-cols-8 gap-2" id="edit-icon-picker"></div>
+        <input type="hidden" id="edit-habit-icon"/>
+      </div>
+      <div class="mb-6">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Repeat on</label>
+        <div class="flex gap-1.5 flex-wrap" id="day-picker-edit"></div>
+        <input type="hidden" id="edit-habit-days" value="0,1,2,3,4,5,6"/>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="archiveFromEdit()" class="flex-1 py-2.5 rounded-lg border border-error/40 text-error text-sm font-bold hover:bg-error/10">Archive</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Exception Modal -->
+<div class="modal-overlay" id="add-exception-modal" onclick="if(event.target===this)closeModal('add-exception-modal')">
+  <div class="modal-box" style="max-width:400px">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-lg text-on-surface" style="font-family:Montserrat">Add Exception Days</h3>
+      <button onclick="closeModal('add-exception-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form onsubmit="submitException(event)">
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">From *</label>
+          <input class="habit-input" type="date" id="exc-from" required/>
+        </div>
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">To (optional)</label>
+          <input class="habit-input" type="date" id="exc-to"/>
+        </div>
+      </div>
+      <div class="mb-5">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Note (optional)</label>
+        <input class="habit-input" type="text" id="exc-note" placeholder="e.g. Trip to Paris"/>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeModal('add-exception-modal')" class="flex-1 py-2.5 rounded-lg border border-outline-variant/40 text-on-surface-variant text-sm font-bold hover:bg-white/5">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg text-sm font-bold hover:brightness-110" style="background:#f0c040;color:#1a1200">Add Days</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="mobile-nav-mount"></div>
+
+<script src="app.js"></script>
+<script>
+const ICONS = ['sunny','fitness_center','menu_book','ac_unit','directions_run','self_improvement','water_drop','bedtime','local_dining','psychology','favorite','music_note','code','brush','hiking','spa'];
+
+function buildIconPicker(pickerId, attr, onSelect) {
+  const el = document.getElementById(pickerId);
+  if (!el) return;
+  el.innerHTML = ICONS.map(ic =>
+    `<div class="icon-option" data-${attr}="${ic}" onclick="${onSelect}('${ic}')"><span class="material-symbols-outlined text-xl">${ic}</span></div>`
+  ).join('');
+}
+
+initApp('habits');
+buildIconPicker('icon-picker', 'icon', 'selectIcon');
+buildIconPicker('edit-icon-picker', 'edit-icon', 'selectEditIcon');
+buildDayPicker('day-picker-add', 'habit-days');
+buildDayPicker('day-picker-edit', 'edit-habit-days');
+selectIcon('sunny');
+
+const store = window._store;
+let currentWeekOffset = 0;
+
+function getDisplayWeekStart() {
+  const ws = getWeekStart(new Date());
+  ws.setDate(ws.getDate() + currentWeekOffset * 7);
+  return ws;
+}
+
+function shiftWeek(dir) {
+  currentWeekOffset += dir;
+  if (currentWeekOffset > 0) currentWeekOffset = 0;
+  renderMatrix();
+}
+
+function renderMatrix() {
+  const ws = getDisplayWeekStart();
+  const today = dateStr(new Date());
+
+  const end = new Date(ws);
+  end.setDate(end.getDate() + 6);
+  document.getElementById('week-label').textContent =
+    ws.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' +
+    end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(ws);
+    d.setDate(ws.getDate() + i);
+    return d;
+  });
+
+  const head = document.getElementById('matrix-head');
+  head.innerHTML = `<tr style="background:#131b2e;border-bottom:1px solid #1e293b">
+    <th class="p-5 text-xs font-bold text-on-surface-variant uppercase tracking-wider sticky left-0 z-10 border-r min-w-[220px]" style="background:#131b2e;border-color:#1e293b">
+      Habit
+    </th>
+    ${days.map(d => {
+      const ds = dateStr(d);
+      const isTdy = ds === today;
+      const isExc = store.isException(ds);
+      return `<th class="p-3 text-center min-w-[64px]">
+        <div class="text-[10px] uppercase font-bold ${isTdy ? 'text-primary' : isExc ? '' : 'text-on-surface-variant'}" ${isExc ? 'style="color:rgba(240,192,64,0.6)"' : ''}>${DAY_NAMES[dayOfWeek(d)]}</div>
+        <div class="text-lg font-bold ${isTdy ? 'text-primary' : isExc ? '' : 'text-on-surface'}" ${isExc ? 'style="color:rgba(240,192,64,0.6)"' : ''}>${d.getDate()}</div>
+        ${isExc ? '<div style="font-size:0.55rem;color:rgba(240,192,64,0.55);font-weight:700;letter-spacing:0.05em;text-transform:uppercase">off</div>' : ''}
+      </th>`;
+    }).join('')}
+    <th class="p-4 text-center border-l min-w-[80px]" style="border-color:#1e293b">
+      <div class="text-[10px] uppercase font-bold text-on-surface-variant">Score</div>
+    </th>
+    <th class="p-2 min-w-[48px]"></th>
+  </tr>`;
+
+  const active = store.activeHabits();
+  const body = document.getElementById('matrix-body');
+  if (!active.length) {
+    body.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-on-surface-variant">No habits yet. <button onclick="openModal('add-habit-modal')" class="text-primary font-bold hover:underline">Add your first habit →</button></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = active.map(h => {
+    const sched = h.days ?? [0,1,2,3,4,5,6];
+    const streak = store.getStreak(h.id);
+    let score = 0, total = 0;
+
+    const cells = days.map(d => {
+      const dow = dayOfWeek(d);
+      const ds = dateStr(d);
+      if (!sched.includes(dow)) {
+        return `<td class="p-3 text-center"><div class="w-9 h-9 rounded mx-auto" style="background:#0a1020;border:1px dashed #1a2238"></div></td>`;
+      }
+      if (store.isException(ds)) {
+        const note = store.data.exceptions[ds];
+        return `<td class="p-3 text-center"><div class="w-9 h-9 rounded mx-auto flex items-center justify-center" title="${note || 'Exception day'}" style="background:rgba(240,192,64,0.06);border:1px dashed rgba(240,192,64,0.35)"><span style="font-size:0.65rem;color:rgba(240,192,64,0.5)">✦</span></div></td>`;
+      }
+      total++;
+      const done = store.isCompleted(h.id, ds);
+      if (done) score++;
+      const isFuture = ds > today;
+      return `<td class="p-3 text-center">
+        <div class="matrix-cell w-9 h-9 rounded mx-auto flex items-center justify-center ${done ? 'active' : 'border'} ${isFuture ? 'opacity-30 pointer-events-none' : ''}"
+             style="${done ? '' : 'border-color:#2d3449'}"
+             onclick="${isFuture ? '' : `toggleCell('${h.id}','${ds}')`}">
+          ${done ? '<span class="material-symbols-outlined text-on-primary text-base font-bold">check</span>' : ''}
+        </div>
+      </td>`;
+    }).join('');
+
+    return `<tr class="hover:bg-white/[0.02] transition-colors group" id="row-${h.id}">
+      <td class="p-5 sticky left-0 z-10 border-r group-hover:bg-white/[0.02] transition-colors" style="background:#171f33;border-color:#1e293b">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary text-xl">${h.icon}</span>
+          <div>
+            <div class="font-bold text-on-surface text-sm leading-tight">${h.name}</div>
+            ${streak > 0 ? `<span class="text-[10px] font-bold" style="color:#4cd7f6">🔥 ${streak}d streak</span>` : ''}
+          </div>
+        </div>
+      </td>
+      ${cells}
+      <td class="p-4 text-center border-l" style="border-color:#1e293b">
+        <span class="font-mono font-bold text-sm" style="color:${score === total && total > 0 ? '#4be277' : '#bccbb9'}">${score}/${total}</span>
+      </td>
+      <td class="p-2 text-center">
+        <button onclick="openEditModal('${h.id}')" class="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary">
+          <span class="material-symbols-outlined text-lg">more_vert</span>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderArchived();
+}
+
+function toggleCell(habitId, ds) {
+  store.toggleCompletion(habitId, ds);
+  renderMatrix();
+}
+
+function renderArchived() {
+  const archived = store.archivedHabits();
+  const list = document.getElementById('archived-list');
+  if (!archived.length) {
+    list.innerHTML = `<p class="text-on-surface-variant text-sm col-span-2">No archived habits.</p>`;
+    return;
+  }
+  list.innerHTML = archived.map(h => `
+    <div class="pro-card p-4 rounded-xl flex items-center justify-between hover:border-primary/30 transition-colors group">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant" style="background:#2d3449">
+          <span class="material-symbols-outlined">${h.icon}</span>
+        </div>
+        <div>
+          <div class="font-bold text-on-surface text-sm">${h.name}</div>
+          <div class="text-xs text-on-surface-variant">Best streak: ${store.getLongestStreak(h.id)} days</div>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="restoreHabit('${h.id}')" class="text-on-surface-variant group-hover:text-primary transition-colors" title="Restore">
+          <span class="material-symbols-outlined">restart_alt</span>
+        </button>
+        <button onclick="deleteHabit('${h.id}')" class="text-on-surface-variant hover:text-error transition-colors" title="Delete permanently">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function restoreHabit(id) {
+  store.restoreHabit(id);
+  renderMatrix();
+  showToast('Habit restored!', 'restart_alt');
+}
+
+function deleteHabit(id) {
+  if (confirm('Delete this habit permanently? This cannot be undone.')) {
+    store.deleteHabit(id);
+    renderMatrix();
+    showToast('Habit deleted', 'delete');
+  }
+}
+
+function openEditModal(id) {
+  const h = store.data.habits.find(h => h.id === id);
+  if (!h) return;
+  document.getElementById('edit-habit-id').value = id;
+  document.getElementById('edit-habit-name').value = h.name;
+  selectEditIcon(h.icon);
+  buildDayPicker('day-picker-edit', 'edit-habit-days', h.days ?? [0,1,2,3,4,5,6]);
+  openModal('edit-habit-modal');
+}
+
+function submitEditHabit(e) {
+  e.preventDefault();
+  const id = document.getElementById('edit-habit-id').value;
+  const name = document.getElementById('edit-habit-name').value.trim();
+  const icon = document.getElementById('edit-habit-icon').value;
+  const days = getDayPickerValue('edit-habit-days');
+  store.updateHabit(id, { name, icon, days });
+  closeModal('edit-habit-modal');
+  renderMatrix();
+  showToast('Habit updated!', 'edit');
+}
+
+function archiveFromEdit() {
+  const id = document.getElementById('edit-habit-id').value;
+  if (confirm('Archive this habit?')) {
+    store.archiveHabit(id);
+    closeModal('edit-habit-modal');
+    renderMatrix();
+    showToast('Habit archived', 'archive');
+  }
+}
+
+function submitNewHabit(e) {
+  e.preventDefault();
+  const name = document.getElementById('habit-name').value.trim();
+  const icon = document.getElementById('habit-icon').value;
+  const days = getDayPickerValue('habit-days');
+  if (!name) return;
+  store.addHabit(name, icon, days);
+  closeModal('add-habit-modal');
+  e.target.reset();
+  buildDayPicker('day-picker-add', 'habit-days');
+  selectIcon('sunny');
+  renderMatrix();
+  showToast('Habit added!', 'check_circle');
+}
+
+function selectIcon(ic) {
+  document.querySelectorAll('#icon-picker .icon-option').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`#icon-picker [data-icon="${ic}"]`)?.classList.add('selected');
+  document.getElementById('habit-icon').value = ic;
+}
+
+function selectEditIcon(ic) {
+  document.querySelectorAll('#edit-icon-picker .icon-option').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`#edit-icon-picker [data-edit-icon="${ic}"]`)?.classList.add('selected');
+  document.getElementById('edit-habit-icon').value = ic;
+}
+
+function renderExceptions() {
+  const list = document.getElementById('exceptions-list');
+  const exceptions = store.getExceptions();
+  if (!exceptions.length) {
+    list.innerHTML = `<p class="text-sm text-on-surface-variant">No exception days set. Add days you won't be doing habits (travel, events, etc.)</p>`;
+    return;
+  }
+  list.innerHTML = `<div class="flex flex-wrap gap-2">
+    ${exceptions.map(ex => {
+      const label = formatDate(ex.date);
+      return `<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background:#1a2035;border:1px solid rgba(240,192,64,0.22)">
+        <span class="text-xs font-bold" style="color:#f0c040">${label}</span>
+        ${ex.note ? `<span class="text-xs" style="color:rgba(255,255,255,0.35)">· ${ex.note}</span>` : ''}
+        <button onclick="removeException('${ex.date}')" class="hover:opacity-100 opacity-50 transition-opacity ml-0.5" style="color:#e05c5c">
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function submitException(e) {
+  e.preventDefault();
+  const from = document.getElementById('exc-from').value;
+  const to = document.getElementById('exc-to').value || from;
+  const note = document.getElementById('exc-note').value.trim();
+  const start = new Date(from + 'T00:00:00');
+  const end = new Date(to + 'T00:00:00');
+  if (end < start) { showToast('End date must be after start date', 'error'); return; }
+  const d = new Date(start);
+  while (d <= end) { store.addException(dateStr(d), note); d.setDate(d.getDate() + 1); }
+  closeModal('add-exception-modal');
+  e.target.reset();
+  renderMatrix();
+  renderExceptions();
+  const count = Math.round((end - start) / 86400000) + 1;
+  showToast(`${count} exception day${count > 1 ? 's' : ''} added`, 'event_busy');
+}
+
+function removeException(ds) {
+  store.removeException(ds);
+  renderMatrix();
+  renderExceptions();
+}
+
+renderMatrix();
+renderExceptions();
+</script>
+</body>
+</html>

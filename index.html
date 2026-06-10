@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Habits</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#4be277"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="My Habits"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: {
+    colors: {
+      "primary": "#4be277", "primary-container": "#22c55e", "on-primary": "#003915", "on-primary-container": "#004b1e",
+      "secondary": "#4cd7f6", "secondary-container": "#03b5d3", "on-secondary": "#003640",
+      "tertiary": "#deb8ff", "tertiary-container": "#cb94ff",
+      "surface": "#0b1326", "surface-dim": "#0b1326", "surface-container": "#171f33",
+      "surface-container-low": "#131b2e", "surface-container-lowest": "#060e20",
+      "surface-container-high": "#222a3d", "surface-container-highest": "#2d3449",
+      "surface-variant": "#2d3449", "surface-bright": "#31394d",
+      "on-surface": "#dae2fd", "on-surface-variant": "#bccbb9",
+      "outline": "#869585", "outline-variant": "#3d4a3d",
+      "background": "#0b1326", "error": "#ffb4ab",
+    }
+  }}
+}
+</script>
+<style>
+.chart-tab {
+  padding: 0.2rem 0.65rem;
+  border-radius: 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #bccbb9;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.chart-tab.active { background: #4be277; color: #003915; }
+.chart-tab:not(.active):hover { border-color: rgba(75,226,119,0.3); color: #4be277; }
+</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen cyber-grid">
+
+<div id="header-mount"></div>
+
+<div class="flex">
+  <div id="sidebar-mount"></div>
+
+  <!-- Main -->
+  <main class="flex-1 md:ml-64 p-5 md:p-12 pb-24 md:pb-12 fade-in">
+
+    <!-- Hero metrics -->
+    <section class="flex flex-wrap gap-6 mb-10">
+      <!-- Daily Completion -->
+      <div class="glass-panel p-6 rounded-xl neon-glow-primary" style="flex:1;min-width:260px;max-width:320px">
+        <div class="flex justify-between items-start mb-4">
+          <div class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Daily Completion</div>
+          <span class="material-symbols-outlined text-primary">today</span>
+        </div>
+        <div class="text-5xl font-black mb-3" style="font-family:Montserrat"><span id="daily-pct">0</span><span class="text-2xl opacity-50">%</span></div>
+        <div class="w-full xp-bar-track h-1.5 rounded-full overflow-hidden">
+          <div class="xp-bar-fill h-full rounded-full" id="daily-bar" style="width:0%"></div>
+        </div>
+        <div id="daily-delta" class="mt-3 text-xs font-bold text-primary"></div>
+      </div>
+      <!-- Weekly Progress -->
+      <div class="glass-panel p-6 rounded-xl" style="flex:1;min-width:260px;max-width:320px">
+        <div class="flex justify-between items-start mb-4">
+          <div class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">This Week</div>
+          <span class="material-symbols-outlined text-secondary">calendar_view_week</span>
+        </div>
+        <div class="text-5xl font-black mb-3" style="font-family:Montserrat">
+          <span id="week-done">0</span><span class="text-2xl opacity-40"> / </span><span id="week-total" class="text-2xl opacity-50">0</span>
+        </div>
+        <div class="w-full h-1.5 rounded-full overflow-hidden" style="background:#1e293b">
+          <div class="h-full rounded-full transition-all duration-500" id="week-bar" style="width:0%;background:#4cd7f6"></div>
+        </div>
+        <div id="week-delta" class="mt-3 text-xs font-bold" style="color:#4cd7f6"></div>
+      </div>
+    </section>
+
+    <!-- Chart + Active Protocols -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-10">
+
+      <!-- Activity Chart -->
+      <section class="xl:col-span-8 glass-panel p-8 rounded-xl">
+        <div class="flex justify-between items-center mb-8">
+          <h2 class="font-bold text-lg" style="font-family:Montserrat">Activity Flow</h2>
+          <div class="flex gap-1">
+            <button class="chart-tab active" data-mode="daily" onclick="setChartMode('daily')">Daily</button>
+            <button class="chart-tab" data-mode="weekly" onclick="setChartMode('weekly')">Weekly</button>
+            <button class="chart-tab" data-mode="monthly" onclick="setChartMode('monthly')">Monthly</button>
+          </div>
+        </div>
+        <div class="relative w-full" style="height:300px" id="chart-bars"></div>
+        <div id="chart-labels"></div>
+      </section>
+
+      <!-- Today's Habits -->
+      <section class="xl:col-span-4 glass-panel p-6 rounded-xl">
+        <div class="flex justify-between items-center mb-5">
+          <h2 class="font-bold text-lg" style="font-family:Montserrat">Today's Habits</h2>
+          <button onclick="window.location='habits.html'" class="material-symbols-outlined text-primary hover:rotate-90 transition-transform">add</button>
+        </div>
+        <div class="flex flex-col gap-3 overflow-y-auto custom-scrollbar" id="protocols-list" style="max-height:340px"></div>
+      </section>
+    </div>
+
+  </main>
+</div>
+
+<!-- FAB -->
+<button onclick="openModal('add-habit-modal')" class="fixed bottom-20 right-6 md:bottom-10 md:right-10 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-[0_8px_24px_rgba(75,226,119,0.4)] hover:scale-110 active:scale-95 transition-all z-40 group">
+  <span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform">add</span>
+</button>
+
+<!-- Add Habit Modal -->
+<div class="modal-overlay" id="add-habit-modal" onclick="if(event.target===this)closeModal('add-habit-modal')">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-lg text-on-surface" style="font-family:Montserrat">New Habit</h3>
+      <button onclick="closeModal('add-habit-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form id="add-habit-form" onsubmit="submitNewHabit(event)">
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Habit Name</label>
+        <input class="habit-input" type="text" id="habit-name-input" placeholder="e.g. Morning Meditation" required/>
+      </div>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Icon</label>
+        <div class="grid grid-cols-8 gap-2" id="icon-picker"></div>
+        <input type="hidden" id="habit-icon-input" value="sunny"/>
+      </div>
+      <div class="mb-6">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Repeat on</label>
+        <div class="flex gap-1.5 flex-wrap" id="day-picker-add"></div>
+        <input type="hidden" id="habit-days-input" value="0,1,2,3,4,5,6"/>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeModal('add-habit-modal')" class="flex-1 py-2.5 rounded-lg border border-outline-variant/40 text-on-surface-variant text-sm font-bold hover:bg-white/5 transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110 transition-all">Add Habit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="mobile-nav-mount"></div>
+
+<script src="app.js"></script>
+<script>
+const ICONS = ['sunny','fitness_center','menu_book','ac_unit','directions_run','self_improvement','water_drop','bedtime','local_dining','psychology','favorite','music_note','code','brush','hiking','spa'];
+
+function buildIconPicker(pickerId, inputId, onSelect) {
+  const el = document.getElementById(pickerId);
+  if (!el) return;
+  el.innerHTML = ICONS.map(ic =>
+    `<div class="icon-option" data-icon="${ic}" onclick="${onSelect}('${ic}')"><span class="material-symbols-outlined text-xl">${ic}</span></div>`
+  ).join('');
+}
+
+initApp('dashboard');
+buildIconPicker('icon-picker', 'habit-icon-input', 'selectIcon');
+selectIcon('sunny');
+buildDayPicker('day-picker-add', 'habit-days-input');
+
+const store = window._store;
+let chartMode = 'daily';
+
+/* ---- Weekly progress: completed / total scheduled this week ---- */
+function getWeekProgress() {
+  const ws = getWeekStart(new Date());
+  const today = dateStr(new Date());
+  let done = 0, total = 0;
+  store.activeHabits().forEach(h => {
+    const sched = h.days ?? [0,1,2,3,4,5,6];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(ws); d.setDate(ws.getDate() + i);
+      const ds = dateStr(d);
+      if (store.isException(ds)) continue;
+      if (h.createdAt > ds) continue;
+      if (!sched.includes(d.getDay())) continue;
+      total++;
+      if (h.completions[ds]) done++;
+    }
+  });
+  return { done, total };
+}
+
+/* ---- Daily completion rate (today's habits) ---- */
+function getTodayRate() {
+  const today = dateStr(new Date());
+  if (store.isException(today)) return null;
+  const dow = dayOfWeek(new Date());
+  const scheduled = store.activeHabits().filter(h => {
+    const sched = h.days ?? [0,1,2,3,4,5,6];
+    return sched.includes(dow) && h.createdAt <= today;
+  });
+  if (!scheduled.length) return 0;
+  return Math.round(scheduled.filter(h => h.completions[today]).length / scheduled.length * 100);
+}
+
+/* ---- Chart helpers ---- */
+function setChartMode(mode) {
+  chartMode = mode;
+  document.querySelectorAll('.chart-tab').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.mode === mode));
+  renderChart();
+}
+
+function cellColor(r) {
+  if (r === null) return { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.07)', text: 'rgba(255,255,255,0.15)' };
+  const daily = chartMode === 'daily';
+  const green  = daily ? r === 100 : r > 80;
+  const yellow = daily ? (r > 50 && r < 100) : (r >= 50 && r <= 80);
+  if (green)  return { bg: 'rgba(75,226,119,0.18)',  border: 'rgba(75,226,119,0.5)',  text: '#4be277' };
+  if (yellow) return { bg: 'rgba(240,192,64,0.18)',  border: 'rgba(240,192,64,0.5)',  text: '#f0c040' };
+               return { bg: 'rgba(224,92,92,0.18)',   border: 'rgba(224,92,92,0.5)',   text: '#e05c5c' };
+}
+
+function getDayRate(ds, dow) {
+  if (store.isException(ds)) return null;
+  const onDay = store.activeHabits().filter(h => {
+    const s = h.days ?? [0,1,2,3,4,5,6];
+    return s.includes(dow) && h.createdAt <= ds;
+  });
+  if (!onDay.length) return null;
+  return Math.round(onDay.filter(h => h.completions[ds]).length / onDay.length * 100);
+}
+
+function getWeekRate(wStart, todayStr) {
+  let total = 0, count = 0;
+  for (let di = 0; di < 7; di++) {
+    const d = new Date(wStart); d.setDate(wStart.getDate() + di);
+    const ds = dateStr(d);
+    if (ds > todayStr) continue;
+    if (store.isException(ds)) continue;
+    const onDay = store.activeHabits().filter(h => {
+      const s = h.days ?? [0,1,2,3,4,5,6];
+      return s.includes(d.getDay()) && h.createdAt <= ds;
+    });
+    if (!onDay.length) continue;
+    total += onDay.filter(h => h.completions[ds]).length / onDay.length * 100;
+    count++;
+  }
+  return count > 0 ? Math.round(total / count) : null;
+}
+
+function getMonthRate(yr, mn, todayStr) {
+  const days = new Date(yr, mn + 1, 0).getDate();
+  let total = 0, count = 0;
+  for (let day = 1; day <= days; day++) {
+    const d = new Date(yr, mn, day), ds = dateStr(d);
+    if (ds > todayStr) continue;
+    if (store.isException(ds)) continue;
+    const onDay = store.activeHabits().filter(h => {
+      const s = h.days ?? [0,1,2,3,4,5,6];
+      return s.includes(d.getDay()) && h.createdAt <= ds;
+    });
+    if (!onDay.length) continue;
+    total += onDay.filter(h => h.completions[ds]).length / onDay.length * 100;
+    count++;
+  }
+  return count > 0 ? Math.round(total / count) : null;
+}
+
+function drawHeatmap(colHeaders, rowHeaders, grid, tooltips) {
+  const container = document.getElementById('chart-bars');
+  const W = container.clientWidth || 400;
+  const H = container.clientHeight || 300;
+  const nCols = colHeaders.length, nRows = rowHeaders.length;
+  const LABEL_W = 88, GAP = 5, HEADER_H = 22;
+
+  const cellW = Math.max(Math.floor((W - LABEL_W - (nCols - 1) * GAP) / nCols), 18);
+  const cellH = Math.max(Math.floor((H - HEADER_H - (nRows - 1) * GAP) / nRows), 18);
+  const fsVal = cellH >= 46 ? '0.68rem' : cellH >= 32 ? '0.6rem' : '0.52rem';
+
+  const colRow = `<div style="display:flex;gap:${GAP}px;padding-left:${LABEL_W}px;height:${HEADER_H}px;align-items:flex-end;padding-bottom:3px">
+    ${colHeaders.map(h => `<div style="width:${cellW}px;flex-shrink:0;text-align:center;font-size:0.52rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.05em">${h}</div>`).join('')}
+  </div>`;
+
+  const rows = rowHeaders.map((rh, ri) =>
+    `<div style="display:flex;align-items:center;gap:${GAP}px">
+      <div style="width:${LABEL_W}px;flex-shrink:0;text-align:right;padding-right:7px;font-size:0.5rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.02em;white-space:nowrap;overflow:hidden">${rh}</div>
+      ${grid[ri].map((r, ci) => {
+        const { bg, border, text } = cellColor(r);
+        const tt = tooltips?.[ri]?.[ci] || '';
+        return `<div title="${tt}" style="width:${cellW}px;height:${cellH}px;flex-shrink:0;background:${bg};border:1px solid ${border};
+          border-radius:6px;display:flex;align-items:center;justify-content:center;
+          font-size:${fsVal};font-weight:700;color:${text};cursor:default;transition:transform 0.13s;box-sizing:border-box"
+          onmouseover="this.style.transform='scale(1.12)';this.style.zIndex='10'"
+          onmouseout="this.style.transform='scale(1)';this.style.zIndex=''">${r !== null ? r + '%' : ''}</div>`;
+      }).join('')}
+    </div>`
+  ).join('');
+
+  container.innerHTML = `<div style="display:flex;flex-direction:column;gap:${GAP}px;height:100%">${colRow}${rows}</div>`;
+  document.getElementById('chart-labels').innerHTML = '';
+}
+
+function renderChart() {
+  const today = new Date(), todayStr = dateStr(today);
+  const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  if (chartMode === 'daily') {
+    const NUM_WEEKS = 5;
+    const ws = getWeekStart(today);
+    const rowHeaders = [], grid = [], tooltips = [];
+    for (let w = 0; w < NUM_WEEKS; w++) {
+      // w=0 = current week (top row)
+      const sun = new Date(ws); sun.setDate(ws.getDate() - w * 7);
+      const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
+      const startFmt = sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const endFmt = sun.getMonth() === sat.getMonth()
+        ? `–${sat.getDate()}`
+        : `–${sat.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      rowHeaders.push(startFmt + endFmt);
+      const row = [], ttRow = [];
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(sun); day.setDate(sun.getDate() + d);
+        const ds = dateStr(day);
+        if (ds > todayStr) { row.push(null); ttRow.push(''); continue; }
+        const r = getDayRate(ds, day.getDay());
+        row.push(r);
+        ttRow.push(day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (r !== null ? ' · ' + r + '%' : ''));
+      }
+      grid.push(row); tooltips.push(ttRow);
+    }
+    drawHeatmap(DAY_NAMES, rowHeaders, grid, tooltips);
+
+  } else if (chartMode === 'weekly') {
+    const NUM_MONTHS = 5;
+    const rowHeaders = [], grid = [], tooltips = [];
+    for (let m = 0; m < NUM_MONTHS; m++) {
+      const mo = new Date(today.getFullYear(), today.getMonth() - m, 1);
+      const yr = mo.getFullYear(), mn = mo.getMonth();
+      rowHeaders.push(MO[mn] + (yr !== today.getFullYear() ? ' \'' + String(yr).slice(2) : ''));
+      const lastDay = new Date(yr, mn + 1, 0);
+      const monthWeeks = [];
+      let cur = new Date(getWeekStart(mo));
+      while (cur <= lastDay && monthWeeks.length < 5) {
+        monthWeeks.push(new Date(cur));
+        cur = new Date(cur); cur.setDate(cur.getDate() + 7);
+      }
+      const row = [], ttRow = [];
+      for (let wi = 0; wi < 5; wi++) {
+        if (wi >= monthWeeks.length || dateStr(monthWeeks[wi]) > todayStr) { row.push(null); ttRow.push(''); continue; }
+        const wStart = monthWeeks[wi];
+        const wEnd = new Date(wStart); wEnd.setDate(wStart.getDate() + 6);
+        const r = getWeekRate(wStart, todayStr);
+        const s = wStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const e = wEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        row.push(r); ttRow.push(`${s}–${e}${r !== null ? ' · ' + r + '%' : ''}`);
+      }
+      grid.push(row); tooltips.push(ttRow);
+    }
+    drawHeatmap(['W1','W2','W3','W4','W5'], rowHeaders, grid, tooltips);
+
+  } else {
+    const firstStr = store.getFirstHabitDate();
+    const firstYear = firstStr ? parseInt(firstStr.slice(0, 4)) : today.getFullYear();
+    const rowHeaders = [], grid = [], tooltips = [];
+    for (let yr = firstYear; yr <= today.getFullYear(); yr++) {
+      rowHeaders.push(String(yr));
+      const row = [], ttRow = [];
+      for (let mn = 0; mn < 12; mn++) {
+        const moStr = `${yr}-${String(mn+1).padStart(2,'0')}-01`;
+        const lastOfMonth = `${yr}-${String(mn+1).padStart(2,'0')}-${String(new Date(yr, mn+1, 0).getDate()).padStart(2,'0')}`;
+        if (moStr > todayStr || (firstStr && lastOfMonth < firstStr)) { row.push(null); ttRow.push(''); continue; }
+        const r = getMonthRate(yr, mn, todayStr);
+        row.push(r); ttRow.push(MO[mn] + ' ' + yr + (r !== null ? ' · ' + r + '%' : ''));
+      }
+      grid.push(row); tooltips.push(ttRow);
+    }
+    drawHeatmap(MO, rowHeaders, grid, tooltips);
+  }
+}
+
+/* ---- Main render ---- */
+function renderDashboard() {
+  const today = dateStr(new Date());
+
+  // Daily completion
+  const pct = getTodayRate();
+  if (pct === null) {
+    document.getElementById('daily-pct').textContent = '–';
+    document.getElementById('daily-bar').style.width = '0%';
+    document.getElementById('daily-delta').textContent = 'Day off';
+  } else {
+    document.getElementById('daily-pct').textContent = pct;
+    setTimeout(() => { document.getElementById('daily-bar').style.width = pct + '%'; }, 100);
+    document.getElementById('daily-delta').textContent =
+      pct >= 100 ? 'All done today!' : pct >= 50 ? 'Keep pushing!' : pct > 0 ? "Let's go!" : '';
+  }
+
+  // Weekly progress
+  const { done: wDone, total: wTotal } = getWeekProgress();
+  document.getElementById('week-done').textContent = wDone;
+  document.getElementById('week-total').textContent = wTotal;
+  const wPct = wTotal > 0 ? Math.round(wDone / wTotal * 100) : 0;
+  setTimeout(() => { document.getElementById('week-bar').style.width = wPct + '%'; }, 100);
+  document.getElementById('week-delta').textContent =
+    wTotal === 0 ? '' : wDone === wTotal ? 'Perfect week!' : `${wTotal - wDone} remaining`;
+
+  // Chart
+  renderChart();
+
+  // Today's Habits
+  const protocols = document.getElementById('protocols-list');
+  const active = store.activeHabits();
+  const dow = dayOfWeek(new Date());
+  const todayHabits = active.filter(h => { const s = h.days ?? [0,1,2,3,4,5,6]; return s.includes(dow); });
+  if (!todayHabits.length) {
+    protocols.innerHTML = `<p class="text-on-surface-variant text-sm text-center py-8">No habits scheduled today.</p>`;
+  } else {
+    const colors = ['primary', 'secondary', 'tertiary'];
+    const colorHex = { primary: '#4be277', secondary: '#4cd7f6', tertiary: '#deb8ff' };
+    protocols.innerHTML = todayHabits.slice(0, 6).map((h, i) => {
+      const done = h.completions[today];
+      const streak = store.getStreak(h.id);
+      const col = colors[i % colors.length];
+      const hex = colorHex[col];
+      return `<div class="rounded-lg p-3 border-l-4 cursor-pointer hover:bg-white/5 transition-all select-none"
+                   style="background:#171f33;border-left-color:${hex}"
+                   onclick="toggleTodayHabit('${h.id}')">
+        <div class="flex justify-between items-start mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-base" style="color:${hex}">${h.icon}</span>
+            <span class="text-sm font-bold text-on-surface">${h.name}</span>
+          </div>
+          <span class="text-xs font-bold" style="color:${hex}">${done ? '✓ Done' : 'Tap to mark'}</span>
+        </div>
+        <div class="w-full h-1 rounded-full" style="background:#2d3449">
+          <div class="h-full rounded-full transition-all duration-300" style="width:${done ? 100 : 0}%;background:${hex}"></div>
+        </div>
+        ${streak > 0 ? `<div class="mt-1.5"><span class="text-xs px-1.5 py-0.5 rounded font-bold" style="background:rgba(75,226,119,0.1);color:#4be277">${streak}d streak</span></div>` : ''}
+      </div>`;
+    }).join('');
+  }
+}
+
+function toggleTodayHabit(habitId) {
+  store.toggleCompletion(habitId, dateStr(new Date()));
+  renderDashboard();
+}
+
+function selectIcon(ic) {
+  document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`[data-icon="${ic}"]`)?.classList.add('selected');
+  document.getElementById('habit-icon-input').value = ic;
+}
+
+function submitNewHabit(e) {
+  e.preventDefault();
+  const name = document.getElementById('habit-name-input').value.trim();
+  const icon = document.getElementById('habit-icon-input').value;
+  const days = getDayPickerValue('habit-days-input');
+  if (!name) return;
+  store.addHabit(name, icon, days);
+  closeModal('add-habit-modal');
+  e.target.reset();
+  buildDayPicker('day-picker-add', 'habit-days-input');
+  selectIcon('sunny');
+  renderDashboard();
+  showToast('Habit added!', 'check_circle');
+}
+
+renderDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Habits — Goals</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#4be277"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="My Habits"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: {
+    colors: {
+      "primary": "#4be277", "primary-container": "#22c55e", "on-primary": "#003915",
+      "secondary": "#4cd7f6", "tertiary": "#deb8ff", "error": "#ffb4ab",
+      "surface": "#0b1326", "surface-container": "#171f33", "surface-container-low": "#131b2e",
+      "surface-container-lowest": "#060e20", "surface-container-high": "#222a3d",
+      "surface-container-highest": "#2d3449", "surface-bright": "#31394d",
+      "on-surface": "#dae2fd", "on-surface-variant": "#bccbb9",
+      "outline": "#869585", "outline-variant": "#3d4a3d", "background": "#0b1326",
+    }
+  }}
+}
+</script>
+</head>
+<body class="bg-background text-on-surface min-h-screen cyber-grid">
+
+<div id="header-mount"></div>
+
+<div class="flex">
+  <div id="sidebar-mount"></div>
+
+  <main class="flex-1 md:ml-64 p-5 md:p-12 pb-24 md:pb-12 fade-in">
+
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+      <div>
+        <h1 class="text-3xl font-black text-on-surface" style="font-family:Montserrat">Goals</h1>
+        <p class="text-on-surface-variant text-sm mt-1">Set missions, link habits, track your progress to victory.</p>
+      </div>
+      <button onclick="openAddGoalModal()" class="bg-primary text-on-primary py-2.5 px-5 rounded-lg font-bold flex items-center gap-2 hover:brightness-110 transition-all text-sm shadow-lg">
+        <span class="material-symbols-outlined text-xl">add</span>New Goal
+      </button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-4 mb-10" id="goal-stats">
+      <div class="glass-panel p-5 rounded-xl text-center">
+        <div class="text-3xl font-black text-primary mb-1" style="font-family:Montserrat" id="stat-total">0</div>
+        <div class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Total Goals</div>
+      </div>
+      <div class="glass-panel p-5 rounded-xl text-center">
+        <div class="text-3xl font-black text-secondary mb-1" style="font-family:Montserrat" id="stat-active">0</div>
+        <div class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">In Progress</div>
+      </div>
+      <div class="glass-panel p-5 rounded-xl text-center">
+        <div class="text-3xl font-black text-tertiary mb-1" style="font-family:Montserrat" id="stat-complete">0</div>
+        <div class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Completed</div>
+      </div>
+    </div>
+
+    <!-- Goals grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="goals-grid"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden text-center py-20">
+      <div class="w-20 h-20 rounded-full glass-panel flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-4xl text-on-surface-variant">flag</span>
+      </div>
+      <h3 class="font-bold text-on-surface text-lg mb-2">No goals yet</h3>
+      <p class="text-on-surface-variant text-sm mb-6">Create your first goal and link your habits to it.</p>
+      <button onclick="openAddGoalModal()" class="bg-primary text-on-primary py-2.5 px-6 rounded-lg font-bold text-sm hover:brightness-110 transition-all">
+        Create First Goal
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add Goal Modal -->
+<div class="modal-overlay" id="add-goal-modal" onclick="if(event.target===this)closeModal('add-goal-modal')">
+  <div class="modal-box" style="max-width:520px">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-lg text-on-surface" style="font-family:Montserrat">New Goal</h3>
+      <button onclick="closeModal('add-goal-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form onsubmit="submitGoal(event)">
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Goal Name *</label>
+        <input class="habit-input" type="text" id="goal-name" placeholder="e.g. 30-Day Morning Routine" required/>
+      </div>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Description</label>
+        <input class="habit-input" type="text" id="goal-desc" placeholder="What are you trying to achieve?"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Target Days *</label>
+          <input class="habit-input" type="number" id="goal-days" placeholder="30" min="1" required/>
+        </div>
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Deadline</label>
+          <input class="habit-input" type="date" id="goal-deadline"/>
+        </div>
+      </div>
+      <div class="mb-6">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Link Habits (optional)</label>
+        <div id="habit-checkboxes" class="flex flex-col gap-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeModal('add-goal-modal')" class="flex-1 py-2.5 rounded-lg border border-outline-variant/40 text-on-surface-variant text-sm font-bold hover:bg-white/5">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110">Create Goal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Goal Modal -->
+<div class="modal-overlay" id="edit-goal-modal" onclick="if(event.target===this)closeModal('edit-goal-modal')">
+  <div class="modal-box" style="max-width:520px">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-lg text-on-surface" style="font-family:Montserrat">Edit Goal</h3>
+      <button onclick="closeModal('edit-goal-modal')" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form onsubmit="submitEditGoal(event)">
+      <input type="hidden" id="edit-goal-id"/>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Goal Name</label>
+        <input class="habit-input" type="text" id="edit-goal-name" required/>
+      </div>
+      <div class="mb-4">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Description</label>
+        <input class="habit-input" type="text" id="edit-goal-desc"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Target Days</label>
+          <input class="habit-input" type="number" id="edit-goal-days" min="1" required/>
+        </div>
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Deadline</label>
+          <input class="habit-input" type="date" id="edit-goal-deadline"/>
+        </div>
+      </div>
+      <div class="mb-6">
+        <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Linked Habits</label>
+        <div id="edit-habit-checkboxes" class="flex flex-col gap-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="deleteGoalFromEdit()" class="flex-1 py-2.5 rounded-lg border border-error/40 text-error text-sm font-bold hover:bg-error/10">Delete</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="mobile-nav-mount"></div>
+
+<script src="app.js"></script>
+<script>
+initApp('goals');
+const store = window._store;
+
+function renderGoals() {
+  const goals = store.data.goals;
+  const grid = document.getElementById('goals-grid');
+  const empty = document.getElementById('empty-state');
+  const today = dateStr(new Date());
+
+  // Stats
+  const progressList = goals.map(g => store.getGoalProgress(g.id));
+  const completed = progressList.filter(p => p >= 100).length;
+  document.getElementById('stat-total').textContent = goals.length;
+  document.getElementById('stat-active').textContent = goals.length - completed;
+  document.getElementById('stat-complete').textContent = completed;
+
+  if (!goals.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  const colors = ['border-primary text-primary', 'border-secondary text-secondary', 'border-tertiary text-tertiary'];
+  const bgColors = ['rgba(75,226,119,0.08)', 'rgba(76,215,246,0.08)', 'rgba(222,184,255,0.08)'];
+
+  grid.innerHTML = goals.map((g, i) => {
+    const pct = store.getGoalProgress(g.id);
+    const done = pct >= 100;
+    const col = colors[i % colors.length];
+    const bg = bgColors[i % bgColors.length];
+    const linkedHabits = g.linkedHabitIds
+      .map(hid => store.data.habits.find(h => h.id === hid))
+      .filter(Boolean);
+    const daysLeft = g.deadline ? Math.ceil((new Date(g.deadline) - new Date()) / 86400000) : null;
+    const colBase = col.split(' ')[0].replace('border-', '');
+
+    return `<div class="glass-panel rounded-xl p-6 border-l-4 ${col.split(' ')[0]} hover:scale-[1.01] transition-transform cursor-pointer relative overflow-hidden group" style="background:#171f33">
+      ${done ? '<div class="absolute top-3 right-3"><span class="bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full font-bold uppercase">Complete</span></div>' : ''}
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1 pr-8">
+          <h3 class="font-bold text-on-surface text-base leading-tight">${g.name}</h3>
+          ${g.description ? `<p class="text-xs text-on-surface-variant mt-1">${g.description}</p>` : ''}
+        </div>
+        <button onclick="openEditGoal('${g.id}')" class="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary absolute top-4 right-4">
+          <span class="material-symbols-outlined text-lg">more_vert</span>
+        </button>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="mb-3">
+        <div class="flex justify-between items-center mb-1.5">
+          <span class="text-xs text-on-surface-variant">${g.targetDays} day goal</span>
+          <span class="text-sm font-bold ${col.split(' ')[1]}">${pct}%</span>
+        </div>
+        <div class="w-full h-2 rounded-full" style="background:#2d3449">
+          <div class="h-full rounded-full transition-all duration-700" style="width:${pct}%;background:${done ? '#4be277' : 'var(--tw-gradient-to,#4be277)'}"></div>
+        </div>
+      </div>
+
+      <!-- Meta -->
+      <div class="flex items-center gap-3 flex-wrap">
+        ${daysLeft !== null ? `<span class="text-xs px-2 py-0.5 rounded font-bold" style="background:rgba(75,226,119,0.08);color:#4be277">${daysLeft > 0 ? daysLeft + 'd left' : 'Overdue'}</span>` : ''}
+        ${linkedHabits.length ? `<span class="text-xs text-on-surface-variant">${linkedHabits.map(h => h.name).join(', ')}</span>` : `<span class="text-xs text-on-surface-variant">No linked habits</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateHabitCheckboxes(containerId, selectedIds = []) {
+  const habits = store.activeHabits();
+  const el = document.getElementById(containerId);
+  if (!habits.length) {
+    el.innerHTML = '<p class="text-xs text-on-surface-variant">No active habits. Add habits first.</p>';
+    return;
+  }
+  el.innerHTML = habits.map(h => `
+    <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-white/5 transition-colors">
+      <input type="checkbox" class="rounded border-outline-variant" value="${h.id}" ${selectedIds.includes(h.id) ? 'checked' : ''}
+             style="accent-color:#4be277"/>
+      <span class="material-symbols-outlined text-primary text-base">${h.icon}</span>
+      <span class="text-sm text-on-surface">${h.name}</span>
+    </label>`).join('');
+}
+
+function getCheckedHabits(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)).map(el => el.value);
+}
+
+function submitGoal(e) {
+  e.preventDefault();
+  const name = document.getElementById('goal-name').value.trim();
+  const desc = document.getElementById('goal-desc').value.trim();
+  const days = document.getElementById('goal-days').value;
+  const deadline = document.getElementById('goal-deadline').value;
+  const linked = getCheckedHabits('habit-checkboxes');
+  store.addGoal(name, desc, days, linked, deadline);
+  closeModal('add-goal-modal');
+  e.target.reset();
+  renderGoals();
+  showToast('Goal created!', 'flag');
+}
+
+function openEditGoal(id) {
+  const g = store.data.goals.find(g => g.id === id);
+  if (!g) return;
+  document.getElementById('edit-goal-id').value = id;
+  document.getElementById('edit-goal-name').value = g.name;
+  document.getElementById('edit-goal-desc').value = g.description || '';
+  document.getElementById('edit-goal-days').value = g.targetDays;
+  document.getElementById('edit-goal-deadline').value = g.deadline || '';
+  populateHabitCheckboxes('edit-habit-checkboxes', g.linkedHabitIds);
+  openModal('edit-goal-modal');
+}
+
+function submitEditGoal(e) {
+  e.preventDefault();
+  const id = document.getElementById('edit-goal-id').value;
+  store.updateGoal(id, {
+    name: document.getElementById('edit-goal-name').value.trim(),
+    description: document.getElementById('edit-goal-desc').value.trim(),
+    targetDays: parseInt(document.getElementById('edit-goal-days').value),
+    deadline: document.getElementById('edit-goal-deadline').value,
+    linkedHabitIds: getCheckedHabits('edit-habit-checkboxes'),
+  });
+  closeModal('edit-goal-modal');
+  renderGoals();
+  showToast('Goal updated!', 'edit');
+}
+
+function deleteGoalFromEdit() {
+  const id = document.getElementById('edit-goal-id').value;
+  if (confirm('Delete this goal?')) {
+    store.deleteGoal(id);
+    closeModal('edit-goal-modal');
+    renderGoals();
+    showToast('Goal deleted', 'delete');
+  }
+}
+
+function openAddGoalModal() {
+  populateHabitCheckboxes('habit-checkboxes');
+  openModal('add-goal-modal');
+}
+
+renderGoals();
+</script>
+</body>
+</html>
