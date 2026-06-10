@@ -493,7 +493,12 @@ function getDayPickerValue(inputId) {
    Service Worker registration
    ============================================================ */
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+    window.addEventListener('load', async () => {
+        // Unregister all old service workers first to clear stale caches
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) await reg.unregister();
+        navigator.serviceWorker.register('./sw.js');
+    });
 }
 
 /* ============================================================
