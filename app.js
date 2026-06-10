@@ -410,12 +410,64 @@ function toggleMobileMenu() {
 }
 
 /* ============================================================
+   App mode (mobile / desktop)
+   ============================================================ */
+function getAppMode() {
+    return localStorage.getItem('appMode');
+}
+
+function chooseModeAndStart(mode) {
+    localStorage.setItem('appMode', mode);
+    document.getElementById('mode-welcome')?.remove();
+    if (mode === 'mobile') document.body.classList.add('mobile-mode');
+}
+
+function switchMode(mode) {
+    localStorage.setItem('appMode', mode);
+    closeModal('settings-modal');
+    showToast('Mode changed', 'check_circle');
+    setTimeout(() => location.reload(), 800);
+}
+
+function showModeSelectScreen() {
+    const el = document.createElement('div');
+    el.id = 'mode-welcome';
+    el.style.cssText = 'position:fixed;inset:0;background:#0b1326;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;padding:2rem;font-family:Inter,sans-serif';
+    el.innerHTML = `
+        <div style="text-align:center">
+            <div style="font-family:Montserrat,sans-serif;font-size:2rem;font-weight:900;color:#4be277;letter-spacing:-0.02em">MY HABITS</div>
+            <div style="color:#bccbb9;margin-top:0.75rem;font-size:0.9rem">How will you use this app?</div>
+        </div>
+        <div style="display:flex;gap:1.25rem;flex-wrap:wrap;justify-content:center">
+            <button onclick="chooseModeAndStart('desktop')" style="background:#171f33;border:1.5px solid rgba(75,226,119,0.25);border-radius:1rem;padding:1.75rem 2.25rem;display:flex;flex-direction:column;align-items:center;gap:0.85rem;cursor:pointer;color:#dae2fd;min-width:130px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='rgba(75,226,119,0.25)'">
+                <span style="font-size:2.25rem">💻</span>
+                <span style="font-weight:700;font-size:0.95rem">Computer</span>
+            </button>
+            <button onclick="chooseModeAndStart('mobile')" style="background:#171f33;border:1.5px solid rgba(75,226,119,0.25);border-radius:1rem;padding:1.75rem 2.25rem;display:flex;flex-direction:column;align-items:center;gap:0.85rem;cursor:pointer;color:#dae2fd;min-width:130px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='rgba(75,226,119,0.25)'">
+                <span style="font-size:2.25rem">📱</span>
+                <span style="font-weight:700;font-size:0.95rem">Phone</span>
+            </button>
+        </div>
+        <div style="color:#4a5568;font-size:0.72rem">You can change this in Settings</div>
+    `;
+    document.body.appendChild(el);
+}
+
+/* ============================================================
    Settings modal
    ============================================================ */
 function openSettings() {
     const store = window._store;
     const nameEl = document.getElementById('settings-name');
     if (nameEl) nameEl.value = store?.data?.user?.name || '';
+    const mode = getAppMode() || 'desktop';
+    ['desktop','mobile'].forEach(m => {
+        const btn = document.getElementById('mode-btn-' + m);
+        if (btn) {
+            btn.style.borderColor = mode === m ? '#4be277' : '#2d3449';
+            btn.style.color = mode === m ? '#4be277' : '#bccbb9';
+        }
+    });
     openModal('settings-modal');
 }
 
@@ -453,6 +505,13 @@ function injectSharedModals() {
             <div class="mb-5">
                 <label class="text-xs font-bold uppercase tracking-widest mb-2 block" style="color:#7a8a9a">Display Name</label>
                 <input class="habit-input" type="text" id="settings-name" placeholder="Your name" style="color:#dae2fd"/>
+            </div>
+            <div class="mb-5 pt-4" style="border-top:1px solid #2d3449">
+                <label class="text-xs font-bold uppercase tracking-widest mb-3 block" style="color:#7a8a9a">Display Mode</label>
+                <div style="display:flex;gap:0.75rem">
+                    <button id="mode-btn-desktop" onclick="switchMode('desktop')" style="flex:1;padding:0.6rem;border-radius:0.5rem;border:1px solid #2d3449;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:#bccbb9;transition:all 0.15s">💻 Computer</button>
+                    <button id="mode-btn-mobile" onclick="switchMode('mobile')" style="flex:1;padding:0.6rem;border-radius:0.5rem;border:1px solid #2d3449;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:#bccbb9;transition:all 0.15s">📱 Phone</button>
+                </div>
             </div>
             <button onclick="saveSettings()" class="w-full py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110 transition-all">Save</button>
         </div>
@@ -506,11 +565,13 @@ if ('serviceWorker' in navigator) {
    ============================================================ */
 function initApp(activePage) {
     window._store = new HabitStore();
+    const mode = getAppMode();
+    if (mode === 'mobile') document.body.classList.add('mobile-mode');
     injectHeader(activePage);
     injectSidebar(activePage);
     injectMobileNav(activePage);
     injectSharedModals();
-    // update avatar letter after store loads
+    if (!mode) showModeSelectScreen();
     const name = window._store?.data?.user?.name || '';
     const btn = document.getElementById('avatar-btn');
     if (btn && name) btn.textContent = name.charAt(0).toUpperCase();

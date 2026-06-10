@@ -262,6 +262,36 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     color: #4be277;
 }
 
+/* ============================
+   Mobile mode
+   ============================ */
+.mobile-mode main.flex-1 {
+    padding: 0.875rem !important;
+    padding-bottom: 5.5rem !important;
+}
+.mobile-mode section.flex-wrap {
+    gap: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+}
+.mobile-mode section.flex-wrap > .glass-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    padding: 1.25rem !important;
+}
+.mobile-mode .xl\:col-span-8.glass-panel,
+.mobile-mode .xl\:col-span-4.glass-panel {
+    padding: 1.25rem !important;
+}
+.mobile-mode #chart-bars {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+.mobile-mode .grid.gap-6.mb-10 {
+    gap: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
 /* Mobile sidebar toggle */
 @media (max-width: 767px) {
     #main-sidebar.sidebar-mobile-open {

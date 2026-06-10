@@ -277,13 +277,14 @@ function getMonthRate(yr, mn, todayStr) {
 
 function drawHeatmap(colHeaders, rowHeaders, grid, tooltips) {
   const container = document.getElementById('chart-bars');
+  const isMobile = document.body.classList.contains('mobile-mode');
   const W = container.clientWidth || 400;
   const H = container.clientHeight || 300;
   const nCols = colHeaders.length, nRows = rowHeaders.length;
-  const LABEL_W = 88, GAP = 5, HEADER_H = 22;
+  const LABEL_W = isMobile ? 72 : 88, GAP = 5, HEADER_H = 22;
 
-  const cellW = Math.max(Math.floor((W - LABEL_W - (nCols - 1) * GAP) / nCols), 18);
-  const cellH = Math.max(Math.floor((H - HEADER_H - (nRows - 1) * GAP) / nRows), 18);
+  const cellW = isMobile ? 30 : Math.max(Math.floor((W - LABEL_W - (nCols - 1) * GAP) / nCols), 18);
+  const cellH = isMobile ? 28 : Math.max(Math.floor((H - HEADER_H - (nRows - 1) * GAP) / nRows), 18);
   const fsVal = cellH >= 46 ? '0.68rem' : cellH >= 32 ? '0.6rem' : '0.52rem';
 
   const colRow = `<div style="display:flex;gap:${GAP}px;padding-left:${LABEL_W}px;height:${HEADER_H}px;align-items:flex-end;padding-bottom:3px">
@@ -305,7 +306,7 @@ function drawHeatmap(colHeaders, rowHeaders, grid, tooltips) {
     </div>`
   ).join('');
 
-  container.innerHTML = `<div style="display:flex;flex-direction:column;gap:${GAP}px;height:100%">${colRow}${rows}</div>`;
+  container.innerHTML = `<div style="display:flex;flex-direction:column;gap:${GAP}px;${isMobile ? 'min-width:fit-content' : 'height:100%'}">${colRow}${rows}</div>`;
   document.getElementById('chart-labels').innerHTML = '';
 }
 
