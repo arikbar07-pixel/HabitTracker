@@ -310,6 +310,14 @@ function drawHeatmap(colHeaders, rowHeaders, grid, tooltips) {
 }
 
 function renderChart() {
+  if (store.activeHabits().length === 0) {
+    document.getElementById('chart-bars').innerHTML =
+      `<div style="height:100%;display:flex;align-items:center;justify-content:center">
+         <span style="font-size:0.85rem;font-weight:600;color:rgba(188,203,185,0.4);letter-spacing:0.04em">Add your first habit to start tracking</span>
+       </div>`;
+    document.getElementById('chart-labels').innerHTML = '';
+    return;
+  }
   const today = new Date(), todayStr = dateStr(today);
   const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -390,28 +398,42 @@ function renderChart() {
 /* ---- Main render ---- */
 function renderDashboard() {
   const today = dateStr(new Date());
+  const hasHabits = store.activeHabits().length > 0;
 
   // Daily completion
-  const pct = getTodayRate();
-  if (pct === null) {
+  if (!hasHabits) {
     document.getElementById('daily-pct').textContent = '–';
     document.getElementById('daily-bar').style.width = '0%';
-    document.getElementById('daily-delta').textContent = 'Day off';
+    document.getElementById('daily-delta').textContent = '';
   } else {
-    document.getElementById('daily-pct').textContent = pct;
-    setTimeout(() => { document.getElementById('daily-bar').style.width = pct + '%'; }, 100);
-    document.getElementById('daily-delta').textContent =
-      pct >= 100 ? 'All done today!' : pct >= 50 ? 'Keep pushing!' : pct > 0 ? "Let's go!" : '';
+    const pct = getTodayRate();
+    if (pct === null) {
+      document.getElementById('daily-pct').textContent = '–';
+      document.getElementById('daily-bar').style.width = '0%';
+      document.getElementById('daily-delta').textContent = 'Day off';
+    } else {
+      document.getElementById('daily-pct').textContent = pct;
+      setTimeout(() => { document.getElementById('daily-bar').style.width = pct + '%'; }, 100);
+      document.getElementById('daily-delta').textContent =
+        pct >= 100 ? 'All done today!' : pct >= 50 ? 'Keep pushing!' : pct > 0 ? "Let's go!" : '';
+    }
   }
 
   // Weekly progress
-  const { done: wDone, total: wTotal } = getWeekProgress();
-  document.getElementById('week-done').textContent = wDone;
-  document.getElementById('week-total').textContent = wTotal;
-  const wPct = wTotal > 0 ? Math.round(wDone / wTotal * 100) : 0;
-  setTimeout(() => { document.getElementById('week-bar').style.width = wPct + '%'; }, 100);
-  document.getElementById('week-delta').textContent =
-    wTotal === 0 ? '' : wDone === wTotal ? 'Perfect week!' : `${wTotal - wDone} remaining`;
+  if (!hasHabits) {
+    document.getElementById('week-done').textContent = '–';
+    document.getElementById('week-total').textContent = '–';
+    document.getElementById('week-bar').style.width = '0%';
+    document.getElementById('week-delta').textContent = '';
+  } else {
+    const { done: wDone, total: wTotal } = getWeekProgress();
+    document.getElementById('week-done').textContent = wDone;
+    document.getElementById('week-total').textContent = wTotal;
+    const wPct = wTotal > 0 ? Math.round(wDone / wTotal * 100) : 0;
+    setTimeout(() => { document.getElementById('week-bar').style.width = wPct + '%'; }, 100);
+    document.getElementById('week-delta').textContent =
+      wTotal === 0 ? '' : wDone === wTotal ? 'Perfect week!' : `${wTotal - wDone} remaining`;
+  }
 
   // Chart
   renderChart();
