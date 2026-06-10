@@ -219,7 +219,7 @@
     phase = 1;
     setWord('GET YOUR SHIT DONE');
     hint.style.display = 'none';
-    setTimeout(exitSplash, 2600);
+    setTimeout(exitSplash, 5000);
   }
 
   function onKey(e) {
