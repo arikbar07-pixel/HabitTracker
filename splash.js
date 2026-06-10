@@ -71,9 +71,10 @@
   }
 
   // ── Dimensions ───────────────────────────────────────────────
+  const DPR   = Math.min(window.devicePixelRatio || 1, 3);
   const CW    = Math.floor(window.innerWidth);
   const CH    = Math.floor(window.innerHeight);
-  const PDRAW = 2;
+  const PDRAW = 3;
   // Adaptive step: keep particle count reasonable on large screens
   const PSTEP = Math.max(4, Math.floor(CW * CH / 180000));
 
@@ -85,8 +86,8 @@
   ].join(';');
 
   const canvas = document.createElement('canvas');
-  canvas.width  = CW;
-  canvas.height = CH;
+  canvas.width  = CW * DPR;
+  canvas.height = CH * DPR;
   canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:block;';
 
   overlay.appendChild(canvas);
@@ -96,6 +97,7 @@
 
   // ── Engine ───────────────────────────────────────────────────
   const ctx       = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
   const particles = [];
   let phase       = 0;
   let advancing   = false;
