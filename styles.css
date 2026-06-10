@@ -262,33 +262,46 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     color: #4be277;
 }
 
+/* Metric cards (dashboard) */
+.metric-card {
+    flex: 1;
+    min-width: 260px;
+    max-width: 320px;
+}
+
+/* Activity flow chart container */
+.chart-container {
+    height: 300px;
+}
+
 /* ============================
    Mobile mode
    ============================ */
 .mobile-mode main.flex-1 {
-    padding: 0.875rem !important;
+    padding: 0.75rem !important;
     padding-bottom: 5.5rem !important;
 }
-.mobile-mode section.flex-wrap {
+.mobile-mode .metric-card {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+    padding: 1rem !important;
+}
+.mobile-mode .chart-container {
+    height: auto;
+    min-height: 160px;
+    overflow-x: auto;
+}
+.mobile-mode .glass-panel {
+    padding: 1rem !important;
+}
+.mobile-mode .gap-6 {
     gap: 0.75rem !important;
+}
+.mobile-mode .mb-10 {
     margin-bottom: 0.75rem !important;
 }
-.mobile-mode section.flex-wrap > .glass-panel {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    flex: 1 1 100% !important;
-    padding: 1.25rem !important;
-}
-.mobile-mode .xl\:col-span-8.glass-panel,
-.mobile-mode .xl\:col-span-4.glass-panel {
-    padding: 1.25rem !important;
-}
-.mobile-mode #chart-bars {
-    overflow-x: auto;
-    overflow-y: visible;
-}
-.mobile-mode .grid.gap-6.mb-10 {
-    gap: 0.75rem !important;
+.mobile-mode .mb-8 {
     margin-bottom: 0.75rem !important;
 }
 

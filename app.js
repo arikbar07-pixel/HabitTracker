@@ -439,12 +439,12 @@ function showModeSelectScreen() {
             <div style="color:#bccbb9;margin-top:0.75rem;font-size:0.9rem">How will you use this app?</div>
         </div>
         <div style="display:flex;gap:1.25rem;flex-wrap:wrap;justify-content:center">
-            <button onclick="chooseModeAndStart('desktop')" style="background:#171f33;border:1.5px solid rgba(75,226,119,0.25);border-radius:1rem;padding:1.75rem 2.25rem;display:flex;flex-direction:column;align-items:center;gap:0.85rem;cursor:pointer;color:#dae2fd;min-width:130px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='rgba(75,226,119,0.25)'">
-                <span style="font-size:2.25rem">💻</span>
+            <button onclick="chooseModeAndStart('desktop')" style="background:#171f33;border:1.5px solid rgba(75,226,119,0.25);border-radius:1rem;padding:1.75rem 2.25rem;display:flex;flex-direction:column;align-items:center;gap:0.85rem;cursor:pointer;color:#dae2fd;min-width:140px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='rgba(75,226,119,0.25)'">
+                <span class="material-symbols-outlined" style="font-size:2.5rem;color:#4be277;font-variation-settings:'FILL' 0,'wght' 300">laptop_mac</span>
                 <span style="font-weight:700;font-size:0.95rem">Computer</span>
             </button>
-            <button onclick="chooseModeAndStart('mobile')" style="background:#171f33;border:1.5px solid rgba(75,226,119,0.25);border-radius:1rem;padding:1.75rem 2.25rem;display:flex;flex-direction:column;align-items:center;gap:0.85rem;cursor:pointer;color:#dae2fd;min-width:130px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='rgba(75,226,119,0.25)'">
-                <span style="font-size:2.25rem">📱</span>
+            <button onclick="chooseModeAndStart('mobile')" style="background:#171f33;border:1.5px solid rgba(75,226,119,0.25);border-radius:1rem;padding:1.75rem 2.25rem;display:flex;flex-direction:column;align-items:center;gap:0.85rem;cursor:pointer;color:#dae2fd;min-width:140px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='rgba(75,226,119,0.25)'">
+                <span class="material-symbols-outlined" style="font-size:2.5rem;color:#4be277;font-variation-settings:'FILL' 0,'wght' 300">smartphone</span>
                 <span style="font-weight:700;font-size:0.95rem">Phone</span>
             </button>
         </div>
@@ -509,8 +509,8 @@ function injectSharedModals() {
             <div class="mb-5 pt-4" style="border-top:1px solid #2d3449">
                 <label class="text-xs font-bold uppercase tracking-widest mb-3 block" style="color:#7a8a9a">Display Mode</label>
                 <div style="display:flex;gap:0.75rem">
-                    <button id="mode-btn-desktop" onclick="switchMode('desktop')" style="flex:1;padding:0.6rem;border-radius:0.5rem;border:1px solid #2d3449;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:#bccbb9;transition:all 0.15s">💻 Computer</button>
-                    <button id="mode-btn-mobile" onclick="switchMode('mobile')" style="flex:1;padding:0.6rem;border-radius:0.5rem;border:1px solid #2d3449;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:#bccbb9;transition:all 0.15s">📱 Phone</button>
+                    <button id="mode-btn-desktop" onclick="switchMode('desktop')" style="flex:1;padding:0.6rem;border-radius:0.5rem;border:1px solid #2d3449;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:#bccbb9;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.4rem"><span class="material-symbols-outlined" style="font-size:1rem">laptop_mac</span>Computer</button>
+                    <button id="mode-btn-mobile" onclick="switchMode('mobile')" style="flex:1;padding:0.6rem;border-radius:0.5rem;border:1px solid #2d3449;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:#bccbb9;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.4rem"><span class="material-symbols-outlined" style="font-size:1rem">smartphone</span>Phone</button>
                 </div>
             </div>
             <button onclick="saveSettings()" class="w-full py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110 transition-all">Save</button>
