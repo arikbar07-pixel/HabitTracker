@@ -1,4 +1,4 @@
-/* Particle text splash screen — auto-advancing */
+/* Particle text splash — full-screen, auto-advancing */
 (function () {
   if (sessionStorage.getItem('splashShown')) return;
 
@@ -20,18 +20,16 @@
     }
 
     move() {
-      const dx = this.pos.x - this.target.x;
-      const dy = this.pos.y - this.target.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const prox = dist < this.closeEnoughTarget ? dist / this.closeEnoughTarget : 1;
       const tx = this.target.x - this.pos.x;
       const ty = this.target.y - this.pos.y;
-      const mag = Math.sqrt(tx * tx + ty * ty) || 1;
-      const vx = (tx / mag) * this.maxSpeed * prox;
-      const vy = (ty / mag) * this.maxSpeed * prox;
-      const sx = vx - this.vel.x;
-      const sy = vy - this.vel.y;
-      const sm = Math.sqrt(sx * sx + sy * sy) || 1;
+      const dist = Math.sqrt(tx * tx + ty * ty);
+      const prox = dist < this.closeEnoughTarget ? dist / this.closeEnoughTarget : 1;
+      const mag  = dist || 1;
+      const vx   = (tx / mag) * this.maxSpeed * prox;
+      const vy   = (ty / mag) * this.maxSpeed * prox;
+      const sx   = vx - this.vel.x;
+      const sy   = vy - this.vel.y;
+      const sm   = Math.sqrt(sx * sx + sy * sy) || 1;
       this.acc.x += (sx / sm) * this.maxForce;
       this.acc.y += (sy / sm) * this.maxForce;
       this.vel.x += this.acc.x;
@@ -72,48 +70,37 @@
     }
   }
 
-  // ── Sizing ───────────────────────────────────────────────────
-  const CW    = window.innerWidth < 600 ? 600 : 1000;
-  const CH    = Math.round(CW * 0.4);
-  const PDRAW = CW < 800 ? 3 : 2;
-  const PSTEP = 5;
+  // ── Dimensions ───────────────────────────────────────────────
+  const CW    = Math.floor(window.innerWidth);
+  const CH    = Math.floor(window.innerHeight);
+  const PDRAW = 2;
+  // Adaptive step: keep particle count reasonable on large screens
+  const PSTEP = Math.max(4, Math.floor(CW * CH / 180000));
 
   // ── DOM ──────────────────────────────────────────────────────
-  const css = document.createElement('style');
-  css.textContent = `@keyframes _sp{0%,100%{opacity:.3}50%{opacity:.8}} #_sph{animation:_sp 2.2s ease-in-out infinite}`;
-  document.head.appendChild(css);
-
   const overlay = document.createElement('div');
   overlay.style.cssText = [
     'position:fixed;inset:0;z-index:99999;background:#000',
-    'display:flex;flex-direction:column;align-items:center;justify-content:center',
-    'transition:opacity .75s ease',
+    'overflow:hidden;transition:opacity .8s ease',
   ].join(';');
 
   const canvas = document.createElement('canvas');
   canvas.width  = CW;
   canvas.height = CH;
-  canvas.style.cssText = 'max-width:95vw;height:auto;display:block;';
-
-  const hint = document.createElement('p');
-  hint.id = '_sph';
-  hint.style.cssText = [
-    'margin-top:1.5rem;color:rgba(75,226,119,.55)',
-    'font-size:.62rem;font-family:Montserrat,sans-serif',
-    'font-weight:700;letter-spacing:.22em;text-transform:uppercase;user-select:none',
-  ].join(';');
+  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:block;';
 
   overlay.appendChild(canvas);
-  overlay.appendChild(hint);
+  document.head.insertAdjacentHTML('beforeend',
+    `<style>@keyframes _sp{0%,100%{opacity:.3}50%{opacity:.8}}#_sph{animation:_sp 2.2s ease-in-out infinite}</style>`
+  );
 
   // ── Engine ───────────────────────────────────────────────────
   const ctx       = canvas.getContext('2d');
   const particles = [];
-  let phase      = 0;   // 0 = MY HABITS forming, 1 = GET YOUR SHIT DONE forming, 2 = exiting
-  let advancing  = false;
+  let phase       = 0;
+  let advancing   = false;
   let settledFrames = 0;
   let phaseFrame    = 0;
-  let totalFrame    = 0;
   let rafId;
 
   function edgePos() {
@@ -121,32 +108,38 @@
     const dx = Math.random() * CW - cx;
     const dy = Math.random() * CH - cy;
     const m  = Math.sqrt(dx * dx + dy * dy) || 1;
-    return { x: cx + (dx / m) * (CW + CH) / 2, y: cy + (dy / m) * (CW + CH) / 2 };
+    const s  = (CW + CH) / 2;
+    return { x: cx + (dx / m) * s, y: cy + (dy / m) * s };
   }
 
   function setWord(text) {
-    const off   = document.createElement('canvas');
-    off.width   = CW; off.height = CH;
-    const oc    = off.getContext('2d');
-    let fs      = 110;
-    oc.font     = `900 ${fs}px Montserrat, Arial Black, sans-serif`;
-    while (oc.measureText(text).width > CW * 0.88 && fs > 14) {
+    const off = document.createElement('canvas');
+    off.width = CW; off.height = CH;
+    const oc  = off.getContext('2d');
+
+    // Auto-fit font to ~75% of canvas width
+    let fs = Math.floor(CH * 0.28);
+    oc.font = `900 ${fs}px Montserrat, Arial Black, sans-serif`;
+    while (oc.measureText(text).width > CW * 0.85 && fs > 12) {
       fs -= 2;
       oc.font = `900 ${fs}px Montserrat, Arial Black, sans-serif`;
     }
-    oc.fillStyle = 'white';
-    oc.textAlign = 'center';
+
+    oc.fillStyle    = 'white';
+    oc.textAlign    = 'center';
     oc.textBaseline = 'middle';
     oc.fillText(text, CW / 2, CH / 2);
 
-    const px     = oc.getImageData(0, 0, CW, CH).data;
-    const GREEN  = { r: 75, g: 226, b: 119 };
+    const px    = oc.getImageData(0, 0, CW, CH).data;
+    const GREEN = { r: 75, g: 226, b: 119 };
     const coords = [];
     for (let i = 0; i < px.length; i += PSTEP * 4) coords.push(i);
+    // shuffle for fluid motion
     for (let i = coords.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [coords[i], coords[j]] = [coords[j], coords[i]];
     }
+
     let pi = 0;
     for (const ci of coords) {
       if (px[ci + 3] > 0) {
@@ -175,21 +168,21 @@
       }
     }
     for (let i = pi; i < particles.length; i++) particles[i].kill(CW, CH);
-    phaseFrame = 0;
+    phaseFrame    = 0;
     settledFrames = 0;
   }
 
-  // Returns true when all active particles are very close to their targets
+  // Soft settle: 90% of active particles within 10px of target
   function isSettled() {
-    let count = 0;
+    let total = 0, close = 0;
     for (const p of particles) {
       if (p.isKilled) continue;
-      count++;
+      total++;
       const dx = p.pos.x - p.target.x;
       const dy = p.pos.y - p.target.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 2.5) return false;
+      if (Math.sqrt(dx * dx + dy * dy) <= 10) close++;
     }
-    return count > 0;
+    return total > 10 && close / total >= 0.90;
   }
 
   function exitSplash() {
@@ -200,13 +193,11 @@
     setTimeout(() => {
       cancelAnimationFrame(rafId);
       overlay.remove();
-      css.remove();
       sessionStorage.setItem('splashShown', '1');
-    }, 750);
+    }, 800);
   }
 
   function tick() {
-    totalFrame++;
     phaseFrame++;
 
     ctx.fillStyle = 'rgba(0,0,0,0.1)';
@@ -220,30 +211,30 @@
         particles.splice(i, 1);
     }
 
-    // Auto-advance: wait at least 60 frames since word was set, then detect settling
-    if (!advancing && phaseFrame > 60) {
+    if (!advancing && phaseFrame > 80) {
       if (phase === 0) {
-        if (isSettled()) {
-          settledFrames++;
-          if (settledFrames >= 35) {       // ~0.6s fully settled → transition
-            advancing = true;
-            hint.style.display = 'none';
-            setTimeout(() => {
-              setWord('GET YOUR SHIT DONE');
-              phase = 1;
-              advancing = false;
-            }, 350);
-          }
-        } else { settledFrames = 0; }
+        if (isSettled()) settledFrames++;
+        else settledFrames = Math.max(0, settledFrames - 1);
+
+        // Advance when settled for 30 frames OR after 9s max
+        if (settledFrames >= 30 || phaseFrame > 540) {
+          advancing = true;
+          setTimeout(() => {
+            setWord('GET YOUR SHIT DONE');
+            phase = 1;
+            advancing = false;
+          }, 400);
+        }
 
       } else if (phase === 1) {
-        if (isSettled()) {
-          settledFrames++;
-          if (settledFrames >= 35) {       // ~0.6s fully settled → hold then exit
-            advancing = true;
-            setTimeout(exitSplash, 3500);  // 3.5s to read the message
-          }
-        } else { settledFrames = 0; }
+        if (isSettled()) settledFrames++;
+        else settledFrames = Math.max(0, settledFrames - 1);
+
+        // Exit when settled for 30 frames OR after 9s max
+        if (settledFrames >= 30 || phaseFrame > 540) {
+          advancing = true;
+          setTimeout(exitSplash, 3500);
+        }
       }
     }
 
@@ -252,7 +243,6 @@
 
   // ── Start ────────────────────────────────────────────────────
   function start() {
-    hint.textContent = '';   // no hint needed — fully automatic
     document.body.appendChild(overlay);
     document.fonts.ready.then(() => {
       setWord('MY HABITS');
