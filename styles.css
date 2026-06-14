@@ -304,6 +304,9 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .mobile-mode .mb-8 {
     margin-bottom: 0.75rem !important;
 }
+.mobile-mode #week-nav {
+    display: none !important;
+}
 
 /* Mobile sidebar toggle */
 @media (max-width: 767px) {

@@ -74,9 +74,12 @@
   const DPR   = Math.min(window.devicePixelRatio || 1, 3);
   const CW    = Math.floor(window.innerWidth);
   const CH    = Math.floor(window.innerHeight);
-  const PDRAW = 3;
-  // Adaptive step: keep particle count reasonable on large screens
-  const PSTEP = Math.max(4, Math.floor(CW * CH / 180000));
+  // On HiDPI screens, smaller particles look sharper (2 CSS px = 6 device px at 3×)
+  const PDRAW = DPR > 1 ? 2 : 3;
+  // Denser sampling on HiDPI so particles fill strokes without gaps
+  const PSTEP = DPR > 1
+    ? Math.max(2, Math.floor(CW * CH / 300000))
+    : Math.max(4, Math.floor(CW * CH / 180000));
 
   // ── DOM ──────────────────────────────────────────────────────
   const overlay = document.createElement('div');

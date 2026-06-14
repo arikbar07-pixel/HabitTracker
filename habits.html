@@ -46,7 +46,7 @@ tailwind.config = {
         <h1 class="text-3xl font-black text-on-surface mb-1" style="font-family:Montserrat">My Habits</h1>
         <p class="text-on-surface-variant text-sm">Visualize your performance and maintain your streaks.</p>
       </div>
-      <div class="flex gap-3 items-center">
+      <div id="week-nav" class="flex gap-3 items-center">
         <button onclick="shiftWeek(-1)" class="p-2 rounded-lg border border-outline-variant/40 text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors">
           <span class="material-symbols-outlined text-xl">chevron_left</span>
         </button>
@@ -68,6 +68,8 @@ tailwind.config = {
           <tbody id="matrix-body" class="divide-y" style="border-color:#1e293b"></tbody>
         </table>
       </div>
+      <!-- Mobile single-day view (replaces table on mobile) -->
+      <div id="mobile-day-view" style="display:none"></div>
     </div>
 
     <!-- Exception Days Panel -->
@@ -224,6 +226,7 @@ selectIcon('sunny');
 
 const store = window._store;
 let currentWeekOffset = 0;
+let currentDayOffset  = 0;
 
 function getDisplayWeekStart() {
   const ws = getWeekStart(new Date());
@@ -237,10 +240,120 @@ function shiftWeek(dir) {
   renderMatrix();
 }
 
-function renderMatrix() {
-  const ws = getDisplayWeekStart();
-  const today = dateStr(new Date());
+function shiftDay(dir) {
+  currentDayOffset += dir;
+  if (currentDayOffset > 0) currentDayOffset = 0;
+  renderMatrix();
+}
 
+function renderMatrix() {
+  const isMobile = document.body.classList.contains('mobile-mode');
+  const today    = dateStr(new Date());
+
+  // ── Mobile: single-day view ───────────────────────────────────
+  if (isMobile) {
+    const currentDay = new Date();
+    currentDay.setDate(currentDay.getDate() + currentDayOffset);
+    const ds       = dateStr(currentDay);
+    const isToday  = currentDayOffset === 0;
+    const isExcDay = store.isException(ds);
+    const dow      = dayOfWeek(currentDay);
+    const active   = store.activeHabits();
+
+    let totalScore = 0, totalTotal = 0;
+    const scheduled = active.filter(h => (h.days ?? [0,1,2,3,4,5,6]).includes(dow));
+
+    const habitsHTML = scheduled.map(h => {
+      const streak = store.getStreak(h.id);
+
+      if (isExcDay) {
+        const note = store.data.exceptions[ds];
+        return '<div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #1e293b;gap:12px">'
+          + '<span class="material-symbols-outlined" style="font-size:22px;color:rgba(240,192,64,0.55)">' + h.icon + '</span>'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-weight:700;font-size:14px;color:rgba(240,192,64,0.65)">' + h.name + '</div>'
+          + '<div style="font-size:11px;color:rgba(240,192,64,0.45);font-weight:600">✶ ' + (note || 'Exception day') + '</div>'
+          + '</div>'
+          + '<div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(240,192,64,0.06);border:1px dashed rgba(240,192,64,0.3);flex-shrink:0">'
+          + '<span style="font-size:14px;color:rgba(240,192,64,0.4)">✶</span>'
+          + '</div></div>';
+      }
+
+      totalTotal++;
+      const done    = store.isCompleted(h.id, ds);
+      if (done) totalScore++;
+      const isFuture = ds > today;
+
+      const checkBox = '<div class="matrix-cell' + (done ? ' active' : '') + '"'
+        + ' onclick="' + (isFuture ? '' : 'event.stopPropagation();toggleCell(\'' + h.id + '\',\'' + ds + '\')') + '"'
+        + ' style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;'
+        + (done ? '' : 'border:1px solid #2d3449;') + (isFuture ? 'opacity:0.3;pointer-events:none;' : '') + '">'
+        + (done ? '<span class="material-symbols-outlined" style="font-size:18px;color:#0b1326;font-weight:700">check</span>' : '')
+        + '</div>';
+
+      return '<div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #1e293b;gap:12px;cursor:' + (isFuture ? 'default' : 'pointer') + '"'
+        + ' onclick="' + (isFuture ? '' : 'toggleCell(\'' + h.id + '\',\'' + ds + '\')') + '">'
+        + '<span class="material-symbols-outlined" onclick="event.stopPropagation();openEditModal(\'' + h.id + '\')"'
+        + ' style="font-size:22px;color:#4be277;cursor:pointer;flex-shrink:0">' + h.icon + '</span>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-weight:700;font-size:14px;color:#dae2fd">' + h.name + '</div>'
+        + (streak > 0 ? '<div style="font-size:11px;color:#4cd7f6;font-weight:600">🔥 ' + streak + 'd streak</div>' : '')
+        + '</div>'
+        + checkBox
+        + '</div>';
+    }).join('') || '<div style="padding:40px 16px;text-align:center;color:#64748b;font-size:14px">No habits scheduled for this day.</div>';
+
+    const progressPct = totalTotal > 0 ? Math.round(totalScore / totalTotal * 100) : 0;
+    const dayName   = currentDay.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateLabel = currentDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    const navBtn = function(dir, disabled) {
+      return '<button onclick="' + (disabled ? '' : 'shiftDay(' + dir + ')') + '" ' + (disabled ? 'disabled' : '') + ' '
+        + 'style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,' + (disabled ? '0.05' : '0.12') + ');'
+        + 'color:' + (disabled ? '#2d3449' : '#94a3b8') + ';background:transparent;cursor:' + (disabled ? 'not-allowed' : 'pointer') + '">'
+        + '<span class="material-symbols-outlined" style="font-size:20px;display:block">chevron_' + (dir === -1 ? 'left' : 'right') + '</span>'
+        + '</button>';
+    };
+
+    let html = '<div style="display:flex;align-items:center;padding:12px 16px;background:#131b2e;border-bottom:1px solid #1e293b;gap:8px">'
+      + navBtn(-1, false)
+      + '<div style="flex:1;text-align:center">'
+      + '<div style="font-size:16px;font-weight:700;color:#dae2fd">' + dayName + ', ' + dateLabel + '</div>'
+      + (isToday ? '<div style="font-size:10px;color:#4be277;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-top:2px">Today</div>' : '')
+      + '</div>'
+      + navBtn(1, currentDayOffset >= 0)
+      + '</div>';
+
+    if (totalTotal > 0 && !isExcDay) {
+      html += '<div style="padding:8px 16px;background:#0f172a;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:10px">'
+        + '<div style="flex:1;height:4px;background:#1e293b;border-radius:2px;overflow:hidden">'
+        + '<div style="height:100%;width:' + progressPct + '%;background:#4be277;border-radius:2px;transition:width 0.4s ease"></div>'
+        + '</div>'
+        + '<span style="font-family:monospace;font-size:12px;font-weight:700;color:' + (totalScore === totalTotal && totalTotal > 0 ? '#4be277' : '#94a3b8') + '">' + totalScore + '/' + totalTotal + '</span>'
+        + '</div>';
+    }
+
+    html += (!active.length
+      ? '<div style="padding:48px 16px;text-align:center;color:#64748b;font-size:14px">No habits yet.</div>'
+      : habitsHTML);
+
+    html += '<div style="padding:16px">'
+      + '<button onclick="openModal(\'add-habit-modal\')" style="width:100%;padding:11px;border-radius:8px;border:1px dashed rgba(75,226,119,0.3);color:#4be277;background:rgba(75,226,119,0.05);font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'
+      + '<span class="material-symbols-outlined" style="font-size:18px">add</span>New Habit'
+      + '</button></div>';
+
+    document.getElementById('mobile-day-view').innerHTML = html;
+    document.getElementById('mobile-day-view').style.display = 'block';
+    document.getElementById('matrix-table').closest('.overflow-x-auto').style.display = 'none';
+    renderArchived();
+    return;
+  }
+
+  // ── Desktop: week matrix ──────────────────────────────────────
+  document.getElementById('mobile-day-view').style.display = 'none';
+  document.getElementById('matrix-table').closest('.overflow-x-auto').style.display = '';
+
+  const ws = getDisplayWeekStart();
   const end = new Date(ws);
   end.setDate(end.getDate() + 6);
   document.getElementById('week-label').textContent =
@@ -254,81 +367,68 @@ function renderMatrix() {
   });
 
   const head = document.getElementById('matrix-head');
-  head.innerHTML = `<tr style="background:#131b2e;border-bottom:1px solid #1e293b">
-    <th class="p-5 text-xs font-bold text-on-surface-variant uppercase tracking-wider sticky left-0 z-10 border-r min-w-[220px]" style="background:#131b2e;border-color:#1e293b">
-      Habit
-    </th>
-    ${days.map(d => {
-      const ds = dateStr(d);
-      const isTdy = ds === today;
-      const isExc = store.isException(ds);
-      return `<th class="p-3 text-center min-w-[64px]">
-        <div class="text-[10px] uppercase font-bold ${isTdy ? 'text-primary' : isExc ? '' : 'text-on-surface-variant'}" ${isExc ? 'style="color:rgba(240,192,64,0.6)"' : ''}>${DAY_NAMES[dayOfWeek(d)]}</div>
-        <div class="text-lg font-bold ${isTdy ? 'text-primary' : isExc ? '' : 'text-on-surface'}" ${isExc ? 'style="color:rgba(240,192,64,0.6)"' : ''}>${d.getDate()}</div>
-        ${isExc ? '<div style="font-size:0.55rem;color:rgba(240,192,64,0.55);font-weight:700;letter-spacing:0.05em;text-transform:uppercase">off</div>' : ''}
-      </th>`;
-    }).join('')}
-    <th class="p-4 text-center border-l min-w-[80px]" style="border-color:#1e293b">
-      <div class="text-[10px] uppercase font-bold text-on-surface-variant">Score</div>
-    </th>
-    <th class="p-2 min-w-[48px]"></th>
-  </tr>`;
+  head.innerHTML = '<tr style="background:#131b2e;border-bottom:1px solid #1e293b">'
+    + '<th class="p-5 text-xs font-bold text-on-surface-variant uppercase tracking-wider sticky left-0 z-10 border-r min-w-[220px]" style="background:#131b2e;border-color:#1e293b">Habit</th>'
+    + days.map(function(d) {
+        const ds = dateStr(d);
+        const isTdy = ds === today;
+        const isExc = store.isException(ds);
+        return '<th class="p-3 text-center min-w-[64px]">'
+          + '<div class="text-[10px] uppercase font-bold ' + (isTdy ? 'text-primary' : isExc ? '' : 'text-on-surface-variant') + '"' + (isExc ? ' style="color:rgba(240,192,64,0.6)"' : '') + '>' + DAY_NAMES[dayOfWeek(d)] + '</div>'
+          + '<div class="text-lg font-bold ' + (isTdy ? 'text-primary' : isExc ? '' : 'text-on-surface') + '"' + (isExc ? ' style="color:rgba(240,192,64,0.6)"' : '') + '>' + d.getDate() + '</div>'
+          + (isExc ? '<div style="font-size:0.55rem;color:rgba(240,192,64,0.55);font-weight:700;letter-spacing:0.05em;text-transform:uppercase">off</div>' : '')
+          + '</th>';
+      }).join('')
+    + '<th class="p-4 text-center border-l min-w-[80px]" style="border-color:#1e293b"><div class="text-[10px] uppercase font-bold text-on-surface-variant">Score</div></th>'
+    + '<th class="p-2 min-w-[48px]"></th>'
+    + '</tr>';
 
   const active = store.activeHabits();
   const body = document.getElementById('matrix-body');
   if (!active.length) {
-    body.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-on-surface-variant">No habits yet. <button onclick="openModal('add-habit-modal')" class="text-primary font-bold hover:underline">Add your first habit →</button></td></tr>`;
+    body.innerHTML = '<tr><td colspan="10" class="p-10 text-center text-on-surface-variant">No habits yet. <button onclick="openModal(\'add-habit-modal\')" class="text-primary font-bold hover:underline">Add your first habit →</button></td></tr>';
     return;
   }
 
-  body.innerHTML = active.map(h => {
+  body.innerHTML = active.map(function(h) {
     const sched = h.days ?? [0,1,2,3,4,5,6];
     const streak = store.getStreak(h.id);
     let score = 0, total = 0;
 
-    const cells = days.map(d => {
+    const cells = days.map(function(d) {
       const dow = dayOfWeek(d);
       const ds = dateStr(d);
       if (!sched.includes(dow)) {
-        return `<td class="p-3 text-center"><div class="w-9 h-9 rounded mx-auto" style="background:#0a1020;border:1px dashed #1a2238"></div></td>`;
+        return '<td class="p-3 text-center"><div class="w-9 h-9 rounded mx-auto" style="background:#0a1020;border:1px dashed #1a2238"></div></td>';
       }
       if (store.isException(ds)) {
         const note = store.data.exceptions[ds];
-        return `<td class="p-3 text-center"><div class="w-9 h-9 rounded mx-auto flex items-center justify-center" title="${note || 'Exception day'}" style="background:rgba(240,192,64,0.06);border:1px dashed rgba(240,192,64,0.35)"><span style="font-size:0.65rem;color:rgba(240,192,64,0.5)">✦</span></div></td>`;
+        return '<td class="p-3 text-center"><div class="w-9 h-9 rounded mx-auto flex items-center justify-center" title="' + (note || 'Exception day') + '" style="background:rgba(240,192,64,0.06);border:1px dashed rgba(240,192,64,0.35)"><span style="font-size:0.65rem;color:rgba(240,192,64,0.5)">✶</span></div></td>';
       }
       total++;
       const done = store.isCompleted(h.id, ds);
       if (done) score++;
       const isFuture = ds > today;
-      return `<td class="p-3 text-center">
-        <div class="matrix-cell w-9 h-9 rounded mx-auto flex items-center justify-center ${done ? 'active' : 'border'} ${isFuture ? 'opacity-30 pointer-events-none' : ''}"
-             style="${done ? '' : 'border-color:#2d3449'}"
-             onclick="${isFuture ? '' : `toggleCell('${h.id}','${ds}')`}">
-          ${done ? '<span class="material-symbols-outlined text-on-primary text-base font-bold">check</span>' : ''}
-        </div>
-      </td>`;
+      return '<td class="p-3 text-center">'
+        + '<div class="matrix-cell w-9 h-9 rounded mx-auto flex items-center justify-center ' + (done ? 'active' : 'border') + ' ' + (isFuture ? 'opacity-30 pointer-events-none' : '') + '"'
+        + ' style="' + (done ? '' : 'border-color:#2d3449') + '"'
+        + ' onclick="' + (isFuture ? '' : 'toggleCell(\'' + h.id + '\',\'' + ds + '\')') + '">'
+        + (done ? '<span class="material-symbols-outlined text-on-primary text-base font-bold">check</span>' : '')
+        + '</div></td>';
     }).join('');
 
-    return `<tr class="hover:bg-white/[0.02] transition-colors group" id="row-${h.id}">
-      <td class="p-5 sticky left-0 z-10 border-r group-hover:bg-white/[0.02] transition-colors" style="background:#171f33;border-color:#1e293b">
-        <div class="flex items-center gap-3">
-          <span class="material-symbols-outlined text-primary text-xl">${h.icon}</span>
-          <div>
-            <div class="font-bold text-on-surface text-sm leading-tight">${h.name}</div>
-            ${streak > 0 ? `<span class="text-[10px] font-bold" style="color:#4cd7f6">🔥 ${streak}d streak</span>` : ''}
-          </div>
-        </div>
-      </td>
-      ${cells}
-      <td class="p-4 text-center border-l" style="border-color:#1e293b">
-        <span class="font-mono font-bold text-sm" style="color:${score === total && total > 0 ? '#4be277' : '#bccbb9'}">${score}/${total}</span>
-      </td>
-      <td class="p-2 text-center">
-        <button onclick="openEditModal('${h.id}')" class="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary">
-          <span class="material-symbols-outlined text-lg">more_vert</span>
-        </button>
-      </td>
-    </tr>`;
+    return '<tr class="hover:bg-white/[0.02] transition-colors group" id="row-' + h.id + '">'
+      + '<td class="p-5 sticky left-0 z-10 border-r group-hover:bg-white/[0.02] transition-colors" style="background:#171f33;border-color:#1e293b">'
+      + '<div class="flex items-center gap-3">'
+      + '<span class="material-symbols-outlined text-primary text-xl">' + h.icon + '</span>'
+      + '<div>'
+      + '<div class="font-bold text-on-surface text-sm leading-tight">' + h.name + '</div>'
+      + (streak > 0 ? '<span class="text-[10px] font-bold" style="color:#4cd7f6">🔥 ' + streak + 'd streak</span>' : '')
+      + '</div></div></td>'
+      + cells
+      + '<td class="p-4 text-center border-l" style="border-color:#1e293b"><span class="font-mono font-bold text-sm" style="color:' + (score === total && total > 0 ? '#4be277' : '#bccbb9') + '">' + score + '/' + total + '</span></td>'
+      + '<td class="p-2 text-center"><button onclick="openEditModal(\'' + h.id + '\')" class="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>'
+      + '</tr>';
   }).join('');
 
   renderArchived();
@@ -343,29 +443,22 @@ function renderArchived() {
   const archived = store.archivedHabits();
   const list = document.getElementById('archived-list');
   if (!archived.length) {
-    list.innerHTML = `<p class="text-on-surface-variant text-sm col-span-2">No archived habits.</p>`;
+    list.innerHTML = '<p class="text-on-surface-variant text-sm col-span-2">No archived habits.</p>';
     return;
   }
-  list.innerHTML = archived.map(h => `
-    <div class="pro-card p-4 rounded-xl flex items-center justify-between hover:border-primary/30 transition-colors group">
-      <div class="flex items-center gap-4">
-        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant" style="background:#2d3449">
-          <span class="material-symbols-outlined">${h.icon}</span>
-        </div>
-        <div>
-          <div class="font-bold text-on-surface text-sm">${h.name}</div>
-          <div class="text-xs text-on-surface-variant">Best streak: ${store.getLongestStreak(h.id)} days</div>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="restoreHabit('${h.id}')" class="text-on-surface-variant group-hover:text-primary transition-colors" title="Restore">
-          <span class="material-symbols-outlined">restart_alt</span>
-        </button>
-        <button onclick="deleteHabit('${h.id}')" class="text-on-surface-variant hover:text-error transition-colors" title="Delete permanently">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
-      </div>
-    </div>`).join('');
+  list.innerHTML = archived.map(function(h) {
+    return '<div class="pro-card p-4 rounded-xl flex items-center justify-between hover:border-primary/30 transition-colors group">'
+      + '<div class="flex items-center gap-4">'
+      + '<div class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant" style="background:#2d3449">'
+      + '<span class="material-symbols-outlined">' + h.icon + '</span></div>'
+      + '<div><div class="font-bold text-on-surface text-sm">' + h.name + '</div>'
+      + '<div class="text-xs text-on-surface-variant">Best streak: ' + store.getLongestStreak(h.id) + ' days</div></div>'
+      + '</div>'
+      + '<div class="flex gap-2">'
+      + '<button onclick="restoreHabit(\'' + h.id + '\')" class="text-on-surface-variant group-hover:text-primary transition-colors" title="Restore"><span class="material-symbols-outlined">restart_alt</span></button>'
+      + '<button onclick="deleteHabit(\'' + h.id + '\')" class="text-on-surface-variant hover:text-error transition-colors" title="Delete permanently"><span class="material-symbols-outlined">delete</span></button>'
+      + '</div></div>';
+  }).join('');
 }
 
 function restoreHabit(id) {
@@ -383,7 +476,7 @@ function deleteHabit(id) {
 }
 
 function openEditModal(id) {
-  const h = store.data.habits.find(h => h.id === id);
+  const h = store.data.habits.find(function(h) { return h.id === id; });
   if (!h) return;
   document.getElementById('edit-habit-id').value = id;
   document.getElementById('edit-habit-name').value = h.name;
@@ -430,14 +523,16 @@ function submitNewHabit(e) {
 }
 
 function selectIcon(ic) {
-  document.querySelectorAll('#icon-picker .icon-option').forEach(el => el.classList.remove('selected'));
-  document.querySelector(`#icon-picker [data-icon="${ic}"]`)?.classList.add('selected');
+  document.querySelectorAll('#icon-picker .icon-option').forEach(function(el) { el.classList.remove('selected'); });
+  const el = document.querySelector('#icon-picker [data-icon="' + ic + '"]');
+  if (el) el.classList.add('selected');
   document.getElementById('habit-icon').value = ic;
 }
 
 function selectEditIcon(ic) {
-  document.querySelectorAll('#edit-icon-picker .icon-option').forEach(el => el.classList.remove('selected'));
-  document.querySelector(`#edit-icon-picker [data-edit-icon="${ic}"]`)?.classList.add('selected');
+  document.querySelectorAll('#edit-icon-picker .icon-option').forEach(function(el) { el.classList.remove('selected'); });
+  const el = document.querySelector('#edit-icon-picker [data-edit-icon="' + ic + '"]');
+  if (el) el.classList.add('selected');
   document.getElementById('edit-habit-icon').value = ic;
 }
 
@@ -445,21 +540,19 @@ function renderExceptions() {
   const list = document.getElementById('exceptions-list');
   const exceptions = store.getExceptions();
   if (!exceptions.length) {
-    list.innerHTML = `<p class="text-sm text-on-surface-variant">No exception days set. Add days you won't be doing habits (travel, events, etc.)</p>`;
+    list.innerHTML = '<p class="text-sm text-on-surface-variant">No exception days set. Add days you won\'t be doing habits (travel, events, etc.)</p>';
     return;
   }
-  list.innerHTML = `<div class="flex flex-wrap gap-2">
-    ${exceptions.map(ex => {
-      const label = formatDate(ex.date);
-      return `<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background:#1a2035;border:1px solid rgba(240,192,64,0.22)">
-        <span class="text-xs font-bold" style="color:#f0c040">${label}</span>
-        ${ex.note ? `<span class="text-xs" style="color:rgba(255,255,255,0.35)">· ${ex.note}</span>` : ''}
-        <button onclick="removeException('${ex.date}')" class="hover:opacity-100 opacity-50 transition-opacity ml-0.5" style="color:#e05c5c">
-          <span class="material-symbols-outlined text-sm">close</span>
-        </button>
-      </div>`;
-    }).join('')}
-  </div>`;
+  list.innerHTML = '<div class="flex flex-wrap gap-2">'
+    + exceptions.map(function(ex) {
+        const label = formatDate(ex.date);
+        return '<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background:#1a2035;border:1px solid rgba(240,192,64,0.22)">'
+          + '<span class="text-xs font-bold" style="color:#f0c040">' + label + '</span>'
+          + (ex.note ? '<span class="text-xs" style="color:rgba(255,255,255,0.35)">· ' + ex.note + '</span>' : '')
+          + '<button onclick="removeException(\'' + ex.date + '\')" class="hover:opacity-100 opacity-50 transition-opacity ml-0.5" style="color:#e05c5c"><span class="material-symbols-outlined text-sm">close</span></button>'
+          + '</div>';
+      }).join('')
+    + '</div>';
 }
 
 function submitException(e) {
@@ -477,7 +570,7 @@ function submitException(e) {
   renderMatrix();
   renderExceptions();
   const count = Math.round((end - start) / 86400000) + 1;
-  showToast(`${count} exception day${count > 1 ? 's' : ''} added`, 'event_busy');
+  showToast(count + ' exception day' + (count > 1 ? 's' : '') + ' added', 'event_busy');
 }
 
 function removeException(ds) {
