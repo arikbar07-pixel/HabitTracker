@@ -592,7 +592,6 @@ function initApp(activePage) {
 
     // Boot immediately from localStorage — no waiting
     _bootApp(activePage);
-    _rerender();
 
     if (!window.FB) return;
 
