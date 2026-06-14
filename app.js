@@ -315,7 +315,7 @@ function injectHeader(activePage) {
     el.innerHTML = `
     <header class="bg-surface/80 backdrop-blur-xl sticky top-0 z-50 border-b border-outline-variant/30 shadow-[0_0_20px_rgba(74,225,118,0.08)] flex justify-between items-center px-6 md:px-16 py-4 w-full" style="background:rgba(11,19,38,0.9)">
         <div class="flex items-center gap-4">
-            <span class="font-black text-2xl tracking-tighter uppercase text-primary" style="font-family:Montserrat">My Habits</span>
+            <span class="font-black text-2xl tracking-tighter uppercase text-primary" style="font-family:Montserrat">זין</span>
         </div>
         <div class="hidden md:flex items-center gap-8">
             <nav class="flex gap-6">
