@@ -88,14 +88,6 @@ tailwind.config = {
       </div>
     </section>
 
-    <!-- Archived Habits -->
-    <section>
-      <h2 class="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
-        <span class="w-1.5 h-1.5 bg-primary rounded-full" style="box-shadow:0 0 8px #4be277"></span>
-        Archived Habits
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="archived-list"></div>
-    </section>
 
     <!-- Quote footer -->
     <footer class="mt-16 pt-8 border-t text-center" style="border-color:#1e293b">
@@ -434,34 +426,11 @@ function renderMatrix() {
       + '</tr>';
   }).join('');
 
-  renderArchived();
 }
 
 function toggleCell(habitId, ds) {
   store.toggleCompletion(habitId, ds);
   renderMatrix();
-}
-
-function renderArchived() {
-  const archived = store.archivedHabits();
-  const list = document.getElementById('archived-list');
-  if (!archived.length) {
-    list.innerHTML = '<p class="text-on-surface-variant text-sm col-span-2">No archived habits.</p>';
-    return;
-  }
-  list.innerHTML = archived.map(function(h) {
-    return '<div class="pro-card p-4 rounded-xl flex items-center justify-between" style="gap:12px">'
-      + '<div class="flex items-center gap-3" style="min-width:0;flex:1">'
-      + '<div class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant flex-shrink-0" style="background:#2d3449">'
-      + '<span class="material-symbols-outlined">' + h.icon + '</span></div>'
-      + '<div style="min-width:0"><div class="font-bold text-on-surface text-sm truncate">' + h.name + '</div>'
-      + '<div class="text-xs text-on-surface-variant">Best streak: ' + store.getLongestStreak(h.id) + ' days</div></div>'
-      + '</div>'
-      + '<div style="display:flex;gap:8px;flex-shrink:0">'
-      + '<button onclick="restoreHabit(\'' + h.id + '\')" title="Restore" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#4be277;cursor:pointer"><span class="material-symbols-outlined" style="font-size:20px">restart_alt</span></button>'
-      + '<button onclick="deleteHabit(\'' + h.id + '\')" title="Delete permanently" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#e05c5c;cursor:pointer"><span class="material-symbols-outlined" style="font-size:20px">delete</span></button>'
-      + '</div></div>';
-  }).join('');
 }
 
 function restoreHabit(id) {
