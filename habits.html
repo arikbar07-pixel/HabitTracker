@@ -72,6 +72,15 @@ tailwind.config = {
       <div id="mobile-day-view" style="display:none"></div>
     </div>
 
+    <!-- Archived Habits -->
+    <div id="archived-section" style="display:none" class="mb-8">
+      <h2 class="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full" style="background:#64748b"></span>
+        Archived Habits
+      </h2>
+      <div id="archived-list" class="flex flex-col gap-3"></div>
+    </div>
+
     <!-- Exception Days Panel -->
     <section class="mb-10">
       <div class="pro-card rounded-xl p-6">
@@ -341,6 +350,7 @@ function renderMatrix() {
     document.getElementById('mobile-day-view').style.display = 'block';
     var tableWrapper = document.getElementById('matrix-table').closest('.overflow-x-auto');
     if (tableWrapper) tableWrapper.style.display = 'none';
+    renderArchived();
     return;
   }
 
@@ -426,11 +436,29 @@ function renderMatrix() {
       + '</tr>';
   }).join('');
 
+  renderArchived();
 }
 
 function toggleCell(habitId, ds) {
   store.toggleCompletion(habitId, ds);
   renderMatrix();
+}
+
+function renderArchived() {
+  const archived = store.archivedHabits();
+  const section = document.getElementById('archived-section');
+  const list    = document.getElementById('archived-list');
+  if (!archived.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = archived.map(function(h) {
+    return '<div class="pro-card rounded-xl flex items-center gap-3 px-4 py-3">'
+      + '<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#1e293b">'
+      + '<span class="material-symbols-outlined" style="color:#64748b">' + h.icon + '</span></div>'
+      + '<div class="flex-1 min-w-0 font-semibold text-sm truncate" style="color:#64748b">' + h.name + '</div>'
+      + '<button type="button" onclick="restoreHabit(\'' + h.id + '\')" title="Restore" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#4be277;cursor:pointer;flex-shrink:0;touch-action:manipulation"><span class="material-symbols-outlined" style="font-size:20px">restart_alt</span></button>'
+      + '<button type="button" onclick="deleteHabit(\'' + h.id + '\')" title="Delete" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#e05c5c;cursor:pointer;flex-shrink:0;touch-action:manipulation"><span class="material-symbols-outlined" style="font-size:20px">delete</span></button>'
+      + '</div>';
+  }).join('');
 }
 
 function restoreHabit(id) {
