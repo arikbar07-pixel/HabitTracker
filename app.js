@@ -543,11 +543,12 @@ function getDayPickerValue(inputId) {
    Service Worker registration
    ============================================================ */
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-        // Unregister all old service workers first to clear stale caches
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const reg of regs) await reg.unregister();
-        navigator.serviceWorker.register('./sw.js');
+    window.addEventListener('load', () => {
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) { refreshing = true; window.location.reload(); }
+        });
+        navigator.serviceWorker.register('./sw.js').then(reg => reg.update());
     });
 }
 

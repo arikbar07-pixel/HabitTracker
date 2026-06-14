@@ -1,13 +1,13 @@
-const CACHE = 'myhabits-v5';
+const CACHE = 'myhabits-v6';
 
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {
-  // Delete all old caches
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// No fetch handler — browser fetches everything fresh from network
+// No fetch handler — always fresh from network
