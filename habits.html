@@ -71,8 +71,6 @@ tailwind.config = {
       <!-- Mobile single-day view (replaces table on mobile) -->
       <div id="mobile-day-view" style="display:none"></div>
     </div>
-    <!-- Mobile archived habits (separate card, no overflow-hidden) -->
-    <div id="mobile-archived-view" style="display:none" class="pro-card rounded-xl mb-4"></div>
 
     <!-- Exception Days Panel -->
     <section class="mb-10">
@@ -340,39 +338,35 @@ function renderMatrix() {
       : habitsHTML);
 
     html += '<div style="padding:16px">'
-      + '<button onclick="openModal(\'add-habit-modal\')" style="width:100%;padding:11px;border-radius:8px;border:1px dashed rgba(75,226,119,0.3);color:#4be277;background:rgba(75,226,119,0.05);font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'
+      + '<button type="button" onclick="openModal(\'add-habit-modal\')" style="width:100%;padding:11px;border-radius:8px;border:1px dashed rgba(75,226,119,0.3);color:#4be277;background:rgba(75,226,119,0.05);font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;touch-action:manipulation">'
       + '<span class="material-symbols-outlined" style="font-size:18px">add</span>New Habit'
       + '</button></div>';
+
+    // ── Archived habits (inline, below the active list) ───────────
+    var archivedHabits = store.archivedHabits();
+    if (archivedHabits.length) {
+      html += '<div style="border-top:2px solid #1e293b;padding-bottom:4px">'
+        + '<div style="padding:14px 16px 6px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em">Archived</div>'
+        + archivedHabits.map(function(h) {
+            return '<div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #1e293b;gap:10px">'
+              + '<div style="width:34px;height:34px;border-radius:8px;background:#1e293b;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+              + '<span class="material-symbols-outlined" style="font-size:18px;color:#64748b">' + h.icon + '</span></div>'
+              + '<div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + h.name + '</div>'
+              + '<button type="button" onclick="restoreHabit(\'' + h.id + '\')" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#4be277;cursor:pointer;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent"><span class="material-symbols-outlined" style="font-size:20px">restart_alt</span></button>'
+              + '<button type="button" onclick="deleteHabit(\'' + h.id + '\')" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#e05c5c;cursor:pointer;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent"><span class="material-symbols-outlined" style="font-size:20px">delete</span></button>'
+              + '</div>';
+          }).join('')
+        + '</div>';
+    }
+
+    // Remove overflow-hidden from the parent card so content isn't clipped
+    var card = document.getElementById('mobile-day-view').closest('.pro-card');
+    if (card) card.style.overflow = 'visible';
 
     document.getElementById('mobile-day-view').innerHTML = html;
     document.getElementById('mobile-day-view').style.display = 'block';
     var tableWrapper = document.getElementById('matrix-table').closest('.overflow-x-auto');
     if (tableWrapper) tableWrapper.style.display = 'none';
-
-    // ── Archived habits (separate card outside overflow-hidden) ───
-    var archView = document.getElementById('mobile-archived-view');
-    var archivedHabits = store.archivedHabits();
-    if (archivedHabits.length) {
-      var archHtml = '<div style="padding:12px 16px 4px">'
-        + '<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Archived</div>'
-        + archivedHabits.map(function(h) {
-            return '<div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #1e293b;gap:10px">'
-              + '<div style="width:34px;height:34px;border-radius:8px;background:#1e293b;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-              + '<span class="material-symbols-outlined" style="font-size:18px;color:#64748b">' + h.icon + '</span></div>'
-              + '<div style="flex:1;min-width:0">'
-              + '<div style="font-size:13px;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + h.name + '</div>'
-              + '</div>'
-              + '<button onclick="restoreHabit(\'' + h.id + '\')" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#4be277;cursor:pointer;flex-shrink:0"><span class="material-symbols-outlined" style="font-size:18px">restart_alt</span></button>'
-              + '<button onclick="deleteHabit(\'' + h.id + '\')" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#e05c5c;cursor:pointer;flex-shrink:0"><span class="material-symbols-outlined" style="font-size:18px">delete</span></button>'
-              + '</div>';
-          }).join('')
-        + '</div>';
-      archView.innerHTML = archHtml;
-      archView.style.display = 'block';
-    } else {
-      archView.innerHTML = '';
-      archView.style.display = 'none';
-    }
     return;
   }
 
