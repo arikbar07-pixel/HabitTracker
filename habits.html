@@ -468,11 +468,9 @@ function restoreHabit(id) {
 }
 
 function deleteHabit(id) {
-  if (confirm('Delete this habit permanently? This cannot be undone.')) {
-    store.deleteHabit(id);
-    renderMatrix();
-    showToast('Habit deleted', 'delete');
-  }
+  store.deleteHabit(id);
+  renderMatrix();
+  showToast('Habit deleted permanently', 'delete');
 }
 
 function openEditModal(id) {
@@ -499,12 +497,15 @@ function submitEditHabit(e) {
 
 function archiveFromEdit() {
   const id = document.getElementById('edit-habit-id').value;
-  if (confirm('Archive this habit?')) {
-    store.archiveHabit(id);
-    closeModal('edit-habit-modal');
-    renderMatrix();
-    showToast('Habit archived', 'archive');
-  }
+  store.archiveHabit(id);
+  closeModal('edit-habit-modal');
+  renderMatrix();
+  showToast('Habit archived', 'archive');
+  // Scroll archived section into view so the user sees the habit moved there
+  setTimeout(function() {
+    var el = document.getElementById('archived-list');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
 }
 
 function submitNewHabit(e) {
