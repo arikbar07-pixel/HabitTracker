@@ -447,16 +447,16 @@ function renderArchived() {
     return;
   }
   list.innerHTML = archived.map(function(h) {
-    return '<div class="pro-card p-4 rounded-xl flex items-center justify-between hover:border-primary/30 transition-colors group">'
-      + '<div class="flex items-center gap-4">'
-      + '<div class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant" style="background:#2d3449">'
+    return '<div class="pro-card p-4 rounded-xl flex items-center justify-between" style="gap:12px">'
+      + '<div class="flex items-center gap-3" style="min-width:0;flex:1">'
+      + '<div class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant flex-shrink-0" style="background:#2d3449">'
       + '<span class="material-symbols-outlined">' + h.icon + '</span></div>'
-      + '<div><div class="font-bold text-on-surface text-sm">' + h.name + '</div>'
+      + '<div style="min-width:0"><div class="font-bold text-on-surface text-sm truncate">' + h.name + '</div>'
       + '<div class="text-xs text-on-surface-variant">Best streak: ' + store.getLongestStreak(h.id) + ' days</div></div>'
       + '</div>'
-      + '<div class="flex gap-2">'
-      + '<button onclick="restoreHabit(\'' + h.id + '\')" class="text-on-surface-variant group-hover:text-primary transition-colors" title="Restore"><span class="material-symbols-outlined">restart_alt</span></button>'
-      + '<button onclick="deleteHabit(\'' + h.id + '\')" class="text-on-surface-variant hover:text-error transition-colors" title="Delete permanently"><span class="material-symbols-outlined">delete</span></button>'
+      + '<div style="display:flex;gap:8px;flex-shrink:0">'
+      + '<button onclick="restoreHabit(\'' + h.id + '\')" title="Restore" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#4be277;cursor:pointer"><span class="material-symbols-outlined" style="font-size:20px">restart_alt</span></button>'
+      + '<button onclick="deleteHabit(\'' + h.id + '\')" title="Delete permanently" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#e05c5c;cursor:pointer"><span class="material-symbols-outlined" style="font-size:20px">delete</span></button>'
       + '</div></div>';
   }).join('');
 }
@@ -464,13 +464,11 @@ function renderArchived() {
 function restoreHabit(id) {
   store.restoreHabit(id);
   renderMatrix();
-  showToast('Habit restored!', 'restart_alt');
 }
 
 function deleteHabit(id) {
   store.deleteHabit(id);
   renderMatrix();
-  showToast('Habit deleted permanently', 'delete');
 }
 
 function openEditModal(id) {
@@ -500,12 +498,6 @@ function archiveFromEdit() {
   store.archiveHabit(id);
   closeModal('edit-habit-modal');
   renderMatrix();
-  showToast('Habit archived', 'archive');
-  // Scroll archived section into view so the user sees the habit moved there
-  setTimeout(function() {
-    var el = document.getElementById('archived-list');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 300);
 }
 
 function submitNewHabit(e) {

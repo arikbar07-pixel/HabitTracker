@@ -363,21 +363,9 @@ function injectMobileNav(activePage) {
 }
 
 /* ============================================================
-   Toast helper
+   Toast helper — disabled by user request
    ============================================================ */
-function showToast(msg, icon = 'check_circle') {
-    let t = document.getElementById('global-toast');
-    if (!t) {
-        t = document.createElement('div');
-        t.id = 'global-toast';
-        t.className = 'toast';
-        document.body.appendChild(t);
-    }
-    t.innerHTML = `<span class="material-symbols-outlined">${icon}</span><span>${msg}</span>`;
-    t.classList.add('show');
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 2800);
-}
+function showToast(msg, icon) { /* no-op */ }
 
 /* ============================================================
    Modal helpers
