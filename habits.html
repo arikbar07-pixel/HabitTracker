@@ -333,23 +333,6 @@ function renderMatrix() {
         + '</div>';
     }
 
-    // ── Archived habits — shown ABOVE active habits so they're immediately visible
-    var archivedHabits = store.archivedHabits();
-    if (archivedHabits.length) {
-      html += '<div style="border-bottom:2px solid #1e293b">'
-        + '<div style="padding:10px 16px 4px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em">Archived</div>'
-        + archivedHabits.map(function(h) {
-            return '<div style="display:flex;align-items:center;padding:8px 16px;gap:10px">'
-              + '<div style="width:32px;height:32px;border-radius:8px;background:#1e293b;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-              + '<span class="material-symbols-outlined" style="font-size:16px;color:#64748b">' + h.icon + '</span></div>'
-              + '<div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + h.name + '</div>'
-              + '<button type="button" onclick="restoreHabit(\'' + h.id + '\')" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#4be277;cursor:pointer;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent"><span class="material-symbols-outlined" style="font-size:20px">restart_alt</span></button>'
-              + '<button type="button" onclick="deleteHabit(\'' + h.id + '\')" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #2d3449;background:transparent;color:#e05c5c;cursor:pointer;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent"><span class="material-symbols-outlined" style="font-size:20px">delete</span></button>'
-              + '</div>';
-          }).join('')
-        + '</div>';
-    }
-
     html += (!active.length
       ? '<div style="padding:48px 16px;text-align:center;color:#64748b;font-size:14px">No habits yet.</div>'
       : habitsHTML);
