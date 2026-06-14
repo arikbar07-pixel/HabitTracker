@@ -66,8 +66,23 @@ class HabitStore {
         if (h) { Object.assign(h, updates); this._save(); }
     }
 
-    archiveHabit(id) { this.updateHabit(id, { archived: true }); }
-    restoreHabit(id) { this.updateHabit(id, { archived: false }); }
+    archiveHabit(id) { this.updateHabit(id, { archived: true, archivedAt: dateStr(new Date()) }); }
+
+    restoreHabit(id) {
+        const h = this.data.habits.find(h => h.id === id);
+        if (!h) return;
+        if (h.archivedAt) {
+            const start = new Date(h.archivedAt + 'T00:00:00');
+            const todayStr = dateStr(new Date());
+            const d = new Date(start);
+            while (dateStr(d) < todayStr) {
+                const ds = dateStr(d);
+                if (!h.completions[ds]) h.completions[ds] = 'skip';
+                d.setDate(d.getDate() + 1);
+            }
+        }
+        this.updateHabit(id, { archived: false, archivedAt: null });
+    }
 
     deleteHabit(id) {
         this.data.habits = this.data.habits.filter(h => h.id !== id);
