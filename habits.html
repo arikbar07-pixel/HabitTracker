@@ -392,6 +392,7 @@ function renderMatrix() {
   const body = document.getElementById('matrix-body');
   if (!active.length) {
     body.innerHTML = '<tr><td colspan="10" class="p-10 text-center text-on-surface-variant">No habits yet. <button onclick="openModal(\'add-habit-modal\')" class="text-primary font-bold hover:underline">Add your first habit →</button></td></tr>';
+    renderArchived();
     return;
   }
 
