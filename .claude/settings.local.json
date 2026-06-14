@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(del \"c:\\\\Users\\\\USER\\\\OneDrive\\\\Desktop\\\\אתר הרגלים אישיים\\\\performance.html\")"
+      "Bash(del \"c:\\\\Users\\\\USER\\\\OneDrive\\\\Desktop\\\\אתר הרגלים אישיים\\\\performance.html\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

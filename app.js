@@ -20,7 +20,9 @@ class HabitStore {
     }
 
     _save() {
+        this.data._ts = Date.now();
         localStorage.setItem(this.KEY, JSON.stringify(this.data));
+        if (window.FB) window.FB.save(this.data);
     }
 
     // One-time migration: old code stored completion keys using UTC midnight dates,
@@ -552,8 +554,7 @@ if ('serviceWorker' in navigator) {
 /* ============================================================
    Init — called by each page
    ============================================================ */
-function initApp(activePage) {
-    window._store = new HabitStore();
+function _bootApp(activePage) {
     const mode = getAppMode();
     if (mode === 'mobile') document.body.classList.add('mobile-mode');
     injectHeader(activePage);
@@ -564,4 +565,70 @@ function initApp(activePage) {
     const name = window._store?.data?.user?.name || '';
     const btn = document.getElementById('avatar-btn');
     if (btn && name) btn.textContent = name.charAt(0).toUpperCase();
+}
+
+function _rerender() {
+    if (typeof renderMatrix    === 'function') renderMatrix();
+    if (typeof renderTasks     === 'function') renderTasks();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof renderGoals     === 'function') renderGoals();
+}
+
+function initApp(activePage) {
+    window._store = new HabitStore();
+
+    if (!window.FB) { _bootApp(activePage); return; }
+
+    // Show sign-in overlay until auth resolves
+    const overlay = document.createElement('div');
+    overlay.id = 'fb-auth-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1326;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px';
+    overlay.innerHTML = '<div style="font-family:Montserrat,sans-serif;font-size:2rem;font-weight:900;color:#4be277">MY HABITS</div>'
+        + '<button onclick="window.FB.signIn()" style="display:flex;align-items:center;gap:12px;padding:14px 28px;border-radius:12px;border:1px solid #2d3449;background:#171f33;color:#dae2fd;font-size:15px;font-weight:600;cursor:pointer">'
+        + '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.5 30.3 0 24 0 14.8 0 7 5.4 3.2 13.2l7.8 6C12.8 13 18 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.3-4.6 6.9l7.2 5.6C43.5 37 46.5 31.2 46.5 24.5z"/><path fill="#FBBC05" d="M11 28.8c-.6-1.7-.9-3.5-.9-5.3s.3-3.6.9-5.3l-7.8-6C1.2 15.3 0 19.5 0 24s1.2 8.7 3.2 12.3l7.8-5.5z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.2-5.6c-2.2 1.5-5 2.4-8.7 2.4-6 0-11.1-4-12.9-9.5l-7.8 5.5C7 43.2 14.9 48 24 48z"/></svg>'
+        + 'Sign in with Google</button>'
+        + '<p style="color:#64748b;font-size:13px">Your data syncs automatically across all devices</p>';
+    document.body.appendChild(overlay);
+
+    window.FB.onAuth(
+        async (user) => {
+            // Signed in — sync from Firestore
+            const fbData = await window.FB.load();
+            if (fbData) {
+                const localTs = window._store.data._ts || 0;
+                const fbTs    = fbData._ts || 0;
+                if (fbTs > localTs) {
+                    // Firestore is newer — use it
+                    window._store.data = fbData;
+                    window._store.data.exceptions = window._store.data.exceptions || {};
+                    localStorage.setItem(window._store.KEY, JSON.stringify(window._store.data));
+                } else if (localTs > fbTs) {
+                    // Local is newer — push it up
+                    window.FB.save(window._store.data);
+                }
+            } else {
+                // First login — push localStorage data to Firestore
+                if (window._store.data.habits.length) window.FB.save(window._store.data);
+            }
+
+            // Remove sign-in overlay
+            document.getElementById('fb-auth-overlay')?.remove();
+
+            // Boot the app
+            _bootApp(activePage);
+            _rerender();
+
+            // Real-time listener: sync changes from other devices
+            window.FB.listen(data => {
+                if ((data._ts || 0) <= (window._store.data._ts || 0)) return;
+                window._store.data = data;
+                window._store.data.exceptions = window._store.data.exceptions || {};
+                localStorage.setItem(window._store.KEY, JSON.stringify(data));
+                _rerender();
+            });
+        },
+        () => {
+            // Not signed in — overlay stays visible
+        }
+    );
 }
