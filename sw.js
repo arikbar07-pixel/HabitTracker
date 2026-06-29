@@ -1,4 +1,4 @@
-const CACHE = 'myhabits-v6.2';
+const CACHE = 'myhabits-v6.3';
 
 self.addEventListener('install', () => self.skipWaiting());
 
