@@ -199,6 +199,7 @@
       cancelAnimationFrame(rafId);
       overlay.remove();
       sessionStorage.setItem('splashShown', '1');
+      window.dispatchEvent(new CustomEvent('splashDone'));
     }, 800);
   }
 

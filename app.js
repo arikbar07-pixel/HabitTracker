@@ -323,7 +323,21 @@ function injectHeader(activePage) {
             </nav>
             <div class="flex items-center gap-3">
                 <button onclick="showToast('No new notifications', 'notifications')" class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
-                <button onclick="openSettings()" class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-bold text-sm border-2 border-primary/30 hover:brightness-110 transition-all" id="avatar-btn" title="Settings">U</button>
+                <div class="relative">
+                    <button type="button" onclick="toggleAccountMenu()" class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-bold text-sm border-2 border-primary/30 hover:brightness-110 transition-all" id="avatar-btn">U</button>
+                    <div id="account-menu" class="hidden absolute right-0 w-56 rounded-xl border shadow-2xl overflow-hidden" style="background:#171f33;border-color:#2d3449;top:calc(100% + 8px);z-index:200">
+                        <div class="px-4 py-3 border-b" style="border-color:#2d3449">
+                            <div class="text-xs font-bold uppercase tracking-widest mb-1" style="color:#4a5568">Account</div>
+                            <div class="text-sm truncate text-on-surface" id="account-email">—</div>
+                        </div>
+                        <button type="button" onclick="openSettings();document.getElementById('account-menu').classList.add('hidden')" class="w-full text-left px-4 py-2.5 text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">settings</span>Settings
+                        </button>
+                        <button type="button" onclick="signOutUser()" class="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-white/5 transition-colors flex items-center gap-2" style="color:#f87171">
+                            <span class="material-symbols-outlined text-base">logout</span>Sign out
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         <button class="md:hidden" onclick="toggleMobileMenu()">
@@ -347,6 +361,9 @@ function injectSidebar(activePage) {
         <div class="px-4 pb-4 border-t mt-4 pt-4" style="border-color:#1e293b">
             <button onclick="openSettings()" class="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all text-sm font-semibold">
                 <span class="material-symbols-outlined text-xl">settings</span>Settings
+            </button>
+            <button onclick="signOutUser()" class="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg hover:bg-white/5 transition-all text-sm font-semibold" style="color:#f87171">
+                <span class="material-symbols-outlined text-xl">logout</span>Sign out
             </button>
         </div>
     </aside>`;
@@ -459,6 +476,15 @@ function openSettings() {
             btn.style.color = mode === m ? '#4be277' : '#bccbb9';
         }
     });
+    const section = document.getElementById('settings-account-section');
+    const emailEl = document.getElementById('settings-email');
+    if (section && window.FB) {
+        const user = window.FB.getUser();
+        if (user) {
+            section.classList.remove('hidden');
+            if (emailEl) emailEl.textContent = user.email || user.displayName || 'Signed in';
+        }
+    }
     openModal('settings-modal');
 }
 
@@ -478,6 +504,9 @@ function saveSettings() {
 function clearAllData() {
     if (confirm('This will permanently delete ALL your habits, goals and data. This cannot be undone.\n\nAre you sure?')) {
         localStorage.removeItem('habitmatrix_v2');
+        localStorage.removeItem('fb_remember');
+        localStorage.removeItem('fb_authed');
+        if (window.FB) window.FB.signOut();
         window.location.reload();
     }
 }
@@ -505,6 +534,13 @@ function injectSharedModals() {
                 </div>
             </div>
             <button onclick="saveSettings()" class="w-full py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold hover:brightness-110 transition-all">Save</button>
+            <div id="settings-account-section" class="mt-5 pt-4 hidden" style="border-top:1px solid #2d3449">
+                <div class="text-xs font-bold uppercase tracking-widest mb-2" style="color:#4a5568">Account</div>
+                <div class="text-sm text-on-surface mb-3 truncate" id="settings-email">—</div>
+                <button onclick="signOutUser();closeModal('settings-modal')" class="w-full py-2.5 rounded-lg border text-sm font-bold transition-all flex items-center justify-center gap-2" style="border-color:#f87171;color:#f87171;background:transparent">
+                    <span class="material-symbols-outlined text-base">logout</span>Sign out
+                </button>
+            </div>
         </div>
     </div>`;
     document.body.appendChild(el.firstElementChild);
@@ -575,17 +611,58 @@ function _rerender() {
     if (typeof renderGoals     === 'function') renderGoals();
 }
 
+function toggleAccountMenu() {
+    const menu = document.getElementById('account-menu');
+    if (!menu) return;
+    const opening = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden');
+    if (opening && window.FB) {
+        const user = window.FB.getUser();
+        const el = document.getElementById('account-email');
+        if (el) el.textContent = user ? (user.email || user.displayName || 'Signed in') : 'Not signed in';
+    }
+}
+
+function signOutUser() {
+    localStorage.removeItem('fb_remember');
+    localStorage.removeItem('fb_authed');
+    document.getElementById('account-menu')?.classList.add('hidden');
+    if (window.FB) window.FB.signOut();
+}
+
+document.addEventListener('click', e => {
+    const menu = document.getElementById('account-menu');
+    if (!menu || menu.classList.contains('hidden')) return;
+    const btn = document.getElementById('avatar-btn');
+    if (!menu.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
 function _showSignInOverlay() {
     if (document.getElementById('fb-auth-overlay')) return;
     const el = document.createElement('div');
     el.id = 'fb-auth-overlay';
-    el.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1326;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px';
-    el.innerHTML = '<div style="font-family:Montserrat,sans-serif;font-size:2rem;font-weight:900;color:#4be277">MY HABITS</div>'
-        + '<button onclick="window.FB.signIn()" style="display:flex;align-items:center;gap:12px;padding:14px 28px;border-radius:12px;border:1px solid #2d3449;background:#171f33;color:#dae2fd;font-size:15px;font-weight:600;cursor:pointer">'
-        + '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.5 30.3 0 24 0 14.8 0 7 5.4 3.2 13.2l7.8 6C12.8 13 18 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.3-4.6 6.9l7.2 5.6C43.5 37 46.5 31.2 46.5 24.5z"/><path fill="#FBBC05" d="M11 28.8c-.6-1.7-.9-3.5-.9-5.3l-7.8-6C1.2 15.3 0 19.5 0 24s1.2 8.7 3.2 12.3l7.8-5.5z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.2-5.6c-2.2 1.5-5 2.4-8.7 2.4-6 0-11.1-4-12.9-9.5l-7.8 5.5C7 43.2 14.9 48 24 48z"/></svg>'
-        + 'Sign in with Google</button>'
-        + '<p style="color:#64748b;font-size:13px">הנתונים שלך יסונכרנו אוטומטית בין כל המכשירים</p>';
+    el.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1326;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:2rem';
+    el.innerHTML = `
+        <div style="font-family:Montserrat,sans-serif;font-size:2.2rem;font-weight:900;color:#4be277;letter-spacing:-0.04em">MY HABITS</div>
+        <p style="color:#64748b;font-size:0.875rem;text-align:center;max-width:260px;line-height:1.5">Sign in to sync your data across all your devices</p>
+        <button type="button" onclick="_doSignIn()" style="display:flex;align-items:center;gap:12px;padding:14px 28px;border-radius:12px;border:1px solid #2d3449;background:#171f33;color:#dae2fd;font-size:15px;font-weight:600;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#4be277'" onmouseout="this.style.borderColor='#2d3449'">
+            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.5 30.3 0 24 0 14.8 0 7 5.4 3.2 13.2l7.8 6C12.8 13 18 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.3-4.6 6.9l7.2 5.6C43.5 37 46.5 31.2 46.5 24.5z"/><path fill="#FBBC05" d="M11 28.8c-.6-1.7-.9-3.5-.9-5.3l-7.8-6C1.2 15.3 0 19.5 0 24s1.2 8.7 3.2 12.3l7.8-5.5z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.2-5.6c-2.2 1.5-5 2.4-8.7 2.4-6 0-11.1-4-12.9-9.5l-7.8 5.5C7 43.2 14.9 48 24 48z"/></svg>
+            Sign in with Google
+        </button>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#94a3b8;font-size:0.8rem;user-select:none">
+            <input type="checkbox" id="fb-remember-check" checked style="width:15px;height:15px;cursor:pointer;accent-color:#4be277"/>
+            Remember me on this device
+        </label>`;
     document.body.appendChild(el);
+}
+
+function _doSignIn() {
+    const cb = document.getElementById('fb-remember-check');
+    if (cb?.checked) localStorage.setItem('fb_remember', '1');
+    else localStorage.removeItem('fb_remember');
+    window.FB?.signIn();
 }
 
 function initApp(activePage) {
@@ -594,15 +671,22 @@ function initApp(activePage) {
 
     if (!window.FB) return;
 
-    // If user was previously signed in, skip the overlay entirely on page navigation
-    const wasAuthed = localStorage.getItem('fb_authed');
-    const overlayTimer = wasAuthed ? null : setTimeout(() => {
-        if (!window.FB.getUser()) _showSignInOverlay();
-    }, 2000);
+    let _splashDone = !!sessionStorage.getItem('splashShown');
+    let _authState  = null; // null=pending, true=in, false=out
+
+    function _tryShowSignIn() {
+        if (_splashDone && _authState === false && !localStorage.getItem('fb_remember')) {
+            _showSignInOverlay();
+        }
+    }
+
+    if (!_splashDone) {
+        window.addEventListener('splashDone', () => { _splashDone = true; _tryShowSignIn(); }, { once: true });
+    }
 
     window.FB.onAuth(
         async (user) => {
-            if (overlayTimer) clearTimeout(overlayTimer);
+            _authState = true;
             localStorage.setItem('fb_authed', '1');
             document.getElementById('fb-auth-overlay')?.remove();
 
@@ -627,9 +711,10 @@ function initApp(activePage) {
             });
         },
         () => {
-            if (overlayTimer) clearTimeout(overlayTimer);
+            _authState = false;
             localStorage.removeItem('fb_authed');
-            _showSignInOverlay();
+            localStorage.removeItem('fb_remember');
+            _tryShowSignIn();
         }
     );
 }
