@@ -536,7 +536,7 @@ function injectSharedModals() {
             <div id="settings-account-section" class="mt-5 pt-4 hidden" style="border-top:1px solid #2d3449">
                 <div class="text-xs font-bold uppercase tracking-widest mb-2" style="color:#4a5568">Account</div>
                 <div class="text-sm text-on-surface mb-3 truncate" id="settings-email">—</div>
-                <button onclick="signOutUser();closeModal('settings-modal')" class="w-full py-2.5 rounded-lg border text-sm font-bold transition-all flex items-center justify-center gap-2" style="border-color:#f87171;color:#f87171;background:transparent">
+                <button onclick="closeModal('settings-modal');signOutUser()" class="w-full py-2.5 rounded-lg border text-sm font-bold transition-all flex items-center justify-center gap-2" style="border-color:#f87171;color:#f87171;background:transparent">
                     <span class="material-symbols-outlined text-base">logout</span>Sign out
                 </button>
             </div>
@@ -626,6 +626,8 @@ function signOutUser() {
     localStorage.removeItem('fb_remember');
     localStorage.removeItem('fb_authed');
     document.getElementById('account-menu')?.classList.add('hidden');
+    document.getElementById('fb-auth-overlay')?.remove();
+    _showSignInOverlay();
     if (window.FB) window.FB.signOut();
 }
 
