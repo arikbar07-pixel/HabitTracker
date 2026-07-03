@@ -269,7 +269,8 @@ function renderMatrix() {
     const scheduled = active.filter(h => (h.days ?? [0,1,2,3,4,5,6]).includes(dow));
 
     const habitsHTML = scheduled.map(h => {
-      const streak = store.getStreak(h.id);
+      const streak  = store.getStreak(h.id);
+      const longest = store.getLongestStreak(h.id);
 
       if (isExcDay) {
         const note = store.data.exceptions[ds];
@@ -302,7 +303,10 @@ function renderMatrix() {
         + ' style="font-size:22px;color:#4be277;cursor:pointer;flex-shrink:0">' + h.icon + '</span>'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-weight:700;font-size:14px;color:#dae2fd">' + h.name + '</div>'
-        + (streak > 0 ? '<div style="font-size:11px;color:#4cd7f6;font-weight:600">🔥 ' + streak + 'd streak</div>' : '')
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'
+        + (streak > 0 ? '<span style="font-size:11px;color:#4cd7f6;font-weight:600">🔥 ' + streak + 'd</span>' : '')
+        + (longest > 0 ? '<span style="font-size:11px;color:#f0c040;font-weight:600">🏆 ' + longest + 'd best</span>' : '')
+        + '</div>'
         + '</div>'
         + checkBox
         + '</div>';
@@ -402,7 +406,8 @@ function renderMatrix() {
 
   body.innerHTML = active.map(function(h) {
     const sched = h.days ?? [0,1,2,3,4,5,6];
-    const streak = store.getStreak(h.id);
+    const streak  = store.getStreak(h.id);
+    const longest = store.getLongestStreak(h.id);
     let score = 0, total = 0;
 
     const cells = days.map(function(d) {
@@ -433,7 +438,10 @@ function renderMatrix() {
       + '<span class="material-symbols-outlined text-primary text-xl">' + h.icon + '</span>'
       + '<div>'
       + '<div class="font-bold text-on-surface text-sm leading-tight">' + h.name + '</div>'
-      + (streak > 0 ? '<span class="text-[10px] font-bold" style="color:#4cd7f6">🔥 ' + streak + 'd streak</span>' : '')
+      + '<div style="display:flex;gap:6px;margin-top:2px">'
+      + (streak  > 0 ? '<span class="text-[10px] font-bold" style="color:#4cd7f6">🔥 ' + streak + 'd</span>' : '')
+      + (longest > 0 ? '<span class="text-[10px] font-bold" style="color:#f0c040">🏆 ' + longest + 'd best</span>' : '')
+      + '</div>'
       + '</div></div></td>'
       + cells
       + '<td class="p-4 text-center border-l" style="border-color:#1e293b"><span class="font-mono font-bold text-sm" style="color:' + (score === total && total > 0 ? '#4be277' : '#bccbb9') + '">' + score + '/' + total + '</span></td>'
