@@ -714,8 +714,17 @@ function initApp(activePage) {
         () => {
             _authState = false;
             localStorage.removeItem('fb_authed');
-            localStorage.removeItem('fb_remember');
-            _tryShowSignIn();
+            // If fb_remember is set, we might be mid-redirect — give Firebase 3s to finish
+            if (localStorage.getItem('fb_remember')) {
+                setTimeout(() => {
+                    if (_authState === false) {
+                        localStorage.removeItem('fb_remember');
+                        _tryShowSignIn();
+                    }
+                }, 3000);
+            } else {
+                _tryShowSignIn();
+            }
         }
     );
 }
