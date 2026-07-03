@@ -321,28 +321,27 @@ function injectHeader(activePage) {
             <nav class="flex gap-6">
                 ${PAGES.map(p => `<a href="${p.href}" class="font-semibold text-sm tracking-widest uppercase transition-colors ${p.id === activePage ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}">${p.label}</a>`).join('')}
             </nav>
-            <div class="flex items-center gap-3">
-                <button onclick="showToast('No new notifications', 'notifications')" class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
-                <div class="relative">
-                    <button type="button" onclick="toggleAccountMenu()" class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-bold text-sm border-2 border-primary/30 hover:brightness-110 transition-all" id="avatar-btn">U</button>
-                    <div id="account-menu" class="hidden absolute right-0 w-56 rounded-xl border shadow-2xl overflow-hidden" style="background:#171f33;border-color:#2d3449;top:calc(100% + 8px);z-index:200">
-                        <div class="px-4 py-3 border-b" style="border-color:#2d3449">
-                            <div class="text-xs font-bold uppercase tracking-widest mb-1" style="color:#4a5568">Account</div>
-                            <div class="text-sm truncate text-on-surface" id="account-email">—</div>
-                        </div>
-                        <button type="button" onclick="openSettings();document.getElementById('account-menu').classList.add('hidden')" class="w-full text-left px-4 py-2.5 text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2">
-                            <span class="material-symbols-outlined text-base">settings</span>Settings
-                        </button>
-                        <button type="button" onclick="signOutUser()" class="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-white/5 transition-colors flex items-center gap-2" style="color:#f87171">
-                            <span class="material-symbols-outlined text-base">logout</span>Sign out
-                        </button>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <button type="button" onclick="toggleAccountMenu()" class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-bold text-sm border-2 border-primary/30 hover:brightness-110 transition-all" id="avatar-btn">U</button>
+                <div id="account-menu" class="hidden absolute right-0 w-56 rounded-xl border shadow-2xl overflow-hidden" style="background:#171f33;border-color:#2d3449;top:calc(100% + 8px);z-index:9999">
+                    <div class="px-4 py-3 border-b" style="border-color:#2d3449">
+                        <div class="text-xs font-bold uppercase tracking-widest mb-1" style="color:#4a5568">Account</div>
+                        <div class="text-sm truncate text-on-surface" id="account-email">—</div>
                     </div>
+                    <button type="button" onclick="openSettings();document.getElementById('account-menu').classList.add('hidden')" class="w-full text-left px-4 py-2.5 text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base">settings</span>Settings
+                    </button>
+                    <button type="button" onclick="signOutUser()" class="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-white/5 transition-colors flex items-center gap-2" style="color:#f87171">
+                        <span class="material-symbols-outlined text-base">logout</span>Sign out
+                    </button>
                 </div>
             </div>
+            <button class="md:hidden" onclick="toggleMobileMenu()">
+                <span class="material-symbols-outlined text-primary">menu</span>
+            </button>
         </div>
-        <button class="md:hidden" onclick="toggleMobileMenu()">
-            <span class="material-symbols-outlined text-primary">menu</span>
-        </button>
     </header>`;
 }
 
