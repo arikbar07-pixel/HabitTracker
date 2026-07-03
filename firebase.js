@@ -16,6 +16,15 @@
   let _uid   = null;
   let _unsub = null;
 
+  // On mobile/PWA, signInWithPopup is blocked — handle the redirect result on load
+  auth.getRedirectResult().catch(() => {});
+
+  function _isMobile() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           navigator.standalone === true ||
+           /Mobi|Android/i.test(navigator.userAgent);
+  }
+
   window.FB = {
     onAuth(cbIn, cbOut) {
       auth.onAuthStateChanged(u => {
@@ -26,7 +35,18 @@
     signIn() {
       const p = new firebase.auth.GoogleAuthProvider();
       p.setCustomParameters({ login_hint: 'arik.bar07@gmail.com' });
-      auth.signInWithPopup(p).catch(console.warn);
+      if (_isMobile()) {
+        auth.signInWithRedirect(p).catch(console.warn);
+      } else {
+        auth.signInWithPopup(p).catch(e => {
+          // Fallback to redirect if popup is blocked
+          if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+            auth.signInWithRedirect(p).catch(console.warn);
+          } else {
+            console.warn(e);
+          }
+        });
+      }
     },
     signOut() { auth.signOut(); },
     getUser() { return auth.currentUser; },
