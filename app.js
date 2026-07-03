@@ -581,7 +581,10 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) { refreshing = true; window.location.reload(); }
+            if (refreshing) return;
+            if (localStorage.getItem('fb_redirect_pending')) return; // auth in progress
+            refreshing = true;
+            window.location.reload();
         });
         navigator.serviceWorker.register('./sw.js').then(reg => reg.update());
     });
@@ -663,6 +666,7 @@ function _doSignIn() {
     const cb = document.getElementById('fb-remember-check');
     if (cb?.checked) localStorage.setItem('fb_remember', '1');
     else localStorage.removeItem('fb_remember');
+    localStorage.setItem('fb_redirect_pending', '1');
     window.FB?.signIn();
 }
 
@@ -688,6 +692,7 @@ function initApp(activePage) {
     window.FB.onAuth(
         async (user) => {
             _authState = true;
+            localStorage.removeItem('fb_redirect_pending');
             localStorage.setItem('fb_authed', '1');
             document.getElementById('fb-auth-overlay')?.remove();
 
