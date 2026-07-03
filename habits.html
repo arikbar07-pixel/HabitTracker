@@ -393,7 +393,7 @@ function renderMatrix() {
           + '</th>';
       }).join('')
     + '<th class="p-4 text-center border-l min-w-[80px]" style="border-color:#1e293b"><div class="text-[10px] uppercase font-bold text-on-surface-variant">Score</div></th>'
-    + '<th class="p-4 text-center border-l min-w-[80px]" style="border-color:#1e293b"><div class="text-[10px] uppercase font-bold" style="color:#f0c040">Best</div></th>'
+    + '<th class="p-4 text-center border-l min-w-[100px]" style="border-color:#1e293b"><div class="text-[10px] uppercase font-bold text-on-surface-variant">Best Streak</div></th>'
     + '<th class="p-2 min-w-[48px]"></th>'
     + '</tr>';
 
@@ -443,7 +443,7 @@ function renderMatrix() {
       + '</div></div></td>'
       + cells
       + '<td class="p-4 text-center border-l" style="border-color:#1e293b"><span class="font-mono font-bold text-sm" style="color:' + (score === total && total > 0 ? '#4be277' : '#bccbb9') + '">' + score + '/' + total + '</span></td>'
-      + '<td class="p-4 text-center border-l" style="border-color:#1e293b"><span class="font-mono font-bold text-sm" style="color:#f0c040">' + (longest > 0 ? longest + 'd' : '—') + '</span></td>'
+      + '<td class="p-4 text-center border-l" style="border-color:#1e293b"><span class="font-mono font-bold text-sm text-on-surface">' + (longest > 0 ? longest + 'd' : '—') + '</span></td>'
       + '<td class="p-2 text-center"><button onclick="openEditModal(\'' + h.id + '\')" class="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>'
       + '</tr>';
   }).join('');
