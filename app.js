@@ -666,7 +666,6 @@ function _doSignIn() {
     const cb = document.getElementById('fb-remember-check');
     if (cb?.checked) localStorage.setItem('fb_remember', '1');
     else localStorage.removeItem('fb_remember');
-    localStorage.setItem('fb_redirect_pending', '1');
     window.FB?.signIn();
 }
 
