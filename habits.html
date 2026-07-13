@@ -233,6 +233,21 @@ const store = window._store;
 let currentWeekOffset = 0;
 let currentDayOffset  = 0;
 
+// Navigate to a specific date from dashboard link
+(function () {
+  const d = new URLSearchParams(location.search).get('date');
+  if (!d) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(d + 'T00:00:00');
+  const diffDays = Math.round((target - today) / 86400000);
+  currentDayOffset = Math.min(diffDays, 0);
+  const todayWS = getWeekStart(new Date());
+  const targetWS = getWeekStart(target);
+  const diffWeeks = Math.round((targetWS - todayWS) / (7 * 86400000));
+  currentWeekOffset = Math.min(diffWeeks, 0);
+  history.replaceState(null, '', location.pathname);
+})();
+
 function getDisplayWeekStart() {
   const ws = getWeekStart(new Date());
   ws.setDate(ws.getDate() + currentWeekOffset * 7);

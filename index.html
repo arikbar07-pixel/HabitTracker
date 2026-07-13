@@ -280,7 +280,7 @@ function getMonthRate(yr, mn, todayStr) {
   return count > 0 ? Math.round(total / count) : null;
 }
 
-function drawHeatmap(colHeaders, rowHeaders, grid, tooltips) {
+function drawHeatmap(colHeaders, rowHeaders, grid, tooltips, dates) {
   const container = document.getElementById('chart-bars');
   const isMobile = document.body.classList.contains('mobile-mode');
   const W = container.clientWidth || 400;
@@ -302,11 +302,14 @@ function drawHeatmap(colHeaders, rowHeaders, grid, tooltips) {
       ${grid[ri].map((r, ci) => {
         const { bg, border, text } = cellColor(r);
         const tt = tooltips?.[ri]?.[ci] || '';
+        const cellDate = dates?.[ri]?.[ci];
+        const clickable = r !== null && cellDate;
         return `<div title="${tt}" style="width:${cellW}px;height:${cellH}px;flex-shrink:0;background:${bg};border:1px solid ${border};
           border-radius:6px;display:flex;align-items:center;justify-content:center;
-          font-size:${fsVal};font-weight:700;color:${text};cursor:default;transition:transform 0.13s;box-sizing:border-box"
-          onmouseover="this.style.transform='scale(1.12)';this.style.zIndex='10'"
-          onmouseout="this.style.transform='scale(1)';this.style.zIndex=''">${r !== null ? r + '%' : ''}</div>`;
+          font-size:${fsVal};font-weight:700;color:${text};cursor:${clickable ? 'pointer' : 'default'};transition:transform 0.13s,box-shadow 0.13s;box-sizing:border-box"
+          ${clickable ? `onclick="location.href='habits.html?date=${cellDate}'"` : ''}
+          onmouseover="this.style.transform='scale(1.12)';this.style.zIndex='10'${clickable ? ';this.style.boxShadow=\'0 0 0 2px rgba(75,226,119,0.5)\'' : ''}"
+          onmouseout="this.style.transform='scale(1)';this.style.zIndex='';this.style.boxShadow=''">${r !== null ? r + '%' : ''}</div>`;
       }).join('')}
     </div>`
   ).join('');
@@ -333,7 +336,7 @@ function renderChart() {
     const firstWeekStart = firstStr ? getWeekStart(new Date(firstStr + 'T00:00:00')) : ws;
     const weeksDiff = Math.round((ws - firstWeekStart) / (7 * 24 * 60 * 60 * 1000));
     const NUM_WEEKS = Math.min(weeksDiff + 1, 8);
-    const rowHeaders = [], grid = [], tooltips = [];
+    const rowHeaders = [], grid = [], tooltips = [], dates = [];
     for (let w = 0; w < NUM_WEEKS; w++) {
       const sun = new Date(ws); sun.setDate(ws.getDate() - w * 7);
       const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
@@ -342,25 +345,26 @@ function renderChart() {
         ? `–${sat.getDate()}`
         : `–${sat.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
       rowHeaders.push(startFmt + endFmt);
-      const row = [], ttRow = [];
+      const row = [], ttRow = [], dtRow = [];
       for (let d = 0; d < 7; d++) {
         const day = new Date(sun); day.setDate(sun.getDate() + d);
         const ds = dateStr(day);
-        if (ds > todayStr) { row.push(null); ttRow.push(''); continue; }
+        if (ds > todayStr) { row.push(null); ttRow.push(''); dtRow.push(null); continue; }
         const r = getDayRate(ds, day.getDay());
         row.push(r);
         ttRow.push(day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (r !== null ? ' · ' + r + '%' : ''));
+        dtRow.push(ds);
       }
-      grid.push(row); tooltips.push(ttRow);
+      grid.push(row); tooltips.push(ttRow); dates.push(dtRow);
     }
-    drawHeatmap(DAY_NAMES, rowHeaders, grid, tooltips);
+    drawHeatmap(DAY_NAMES, rowHeaders, grid, tooltips, dates);
 
   } else if (chartMode === 'weekly') {
     const firstStr = store.getFirstHabitDate();
     const firstDate = firstStr ? new Date(firstStr + 'T00:00:00') : today;
     const monthsDiff = (today.getFullYear() - firstDate.getFullYear()) * 12 + (today.getMonth() - firstDate.getMonth());
     const NUM_MONTHS = Math.min(monthsDiff + 1, 12);
-    const rowHeaders = [], grid = [], tooltips = [];
+    const rowHeaders = [], grid = [], tooltips = [], dates = [];
     for (let m = 0; m < NUM_MONTHS; m++) {
       const mo = new Date(today.getFullYear(), today.getMonth() - m, 1);
       const yr = mo.getFullYear(), mn = mo.getMonth();
@@ -372,37 +376,39 @@ function renderChart() {
         monthWeeks.push(new Date(cur));
         cur = new Date(cur); cur.setDate(cur.getDate() + 7);
       }
-      const row = [], ttRow = [];
+      const row = [], ttRow = [], dtRow = [];
       for (let wi = 0; wi < 5; wi++) {
-        if (wi >= monthWeeks.length || dateStr(monthWeeks[wi]) > todayStr) { row.push(null); ttRow.push(''); continue; }
+        if (wi >= monthWeeks.length || dateStr(monthWeeks[wi]) > todayStr) { row.push(null); ttRow.push(''); dtRow.push(null); continue; }
         const wStart = monthWeeks[wi];
         const wEnd = new Date(wStart); wEnd.setDate(wStart.getDate() + 6);
         const r = getWeekRate(wStart, todayStr);
         const s = wStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const e = wEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         row.push(r); ttRow.push(`${s}–${e}${r !== null ? ' · ' + r + '%' : ''}`);
+        dtRow.push(dateStr(wStart));
       }
-      grid.push(row); tooltips.push(ttRow);
+      grid.push(row); tooltips.push(ttRow); dates.push(dtRow);
     }
-    drawHeatmap(['W1','W2','W3','W4','W5'], rowHeaders, grid, tooltips);
+    drawHeatmap(['W1','W2','W3','W4','W5'], rowHeaders, grid, tooltips, dates);
 
   } else {
     const firstStr = store.getFirstHabitDate();
     const firstYear = firstStr ? parseInt(firstStr.slice(0, 4)) : today.getFullYear();
-    const rowHeaders = [], grid = [], tooltips = [];
+    const rowHeaders = [], grid = [], tooltips = [], dates = [];
     for (let yr = today.getFullYear(); yr >= firstYear; yr--) {
       rowHeaders.push(String(yr));
-      const row = [], ttRow = [];
+      const row = [], ttRow = [], dtRow = [];
       for (let mn = 0; mn < 12; mn++) {
         const moStr = `${yr}-${String(mn+1).padStart(2,'0')}-01`;
         const lastOfMonth = `${yr}-${String(mn+1).padStart(2,'0')}-${String(new Date(yr, mn+1, 0).getDate()).padStart(2,'0')}`;
-        if (moStr > todayStr || (firstStr && lastOfMonth < firstStr)) { row.push(null); ttRow.push(''); continue; }
+        if (moStr > todayStr || (firstStr && lastOfMonth < firstStr)) { row.push(null); ttRow.push(''); dtRow.push(null); continue; }
         const r = getMonthRate(yr, mn, todayStr);
         row.push(r); ttRow.push(MO[mn] + ' ' + yr + (r !== null ? ' · ' + r + '%' : ''));
+        dtRow.push(moStr);
       }
-      grid.push(row); tooltips.push(ttRow);
+      grid.push(row); tooltips.push(ttRow); dates.push(dtRow);
     }
-    drawHeatmap(MO, rowHeaders, grid, tooltips);
+    drawHeatmap(MO, rowHeaders, grid, tooltips, dates);
   }
 }
 
